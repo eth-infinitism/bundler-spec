@@ -33,8 +33,10 @@ bytes65:
   pattern: ^0x[0-9a-f]{512}$
 uint:
   title: hex encoded unsigned integer
-  type: string
-  pattern: ^0x([1-9a-f]+[0-9a-f]*|0)$
+  oneOf:
+    - type: string
+      pattern: ^0x([1-9a-f]+[0-9a-f]*|0)$
+    - type: number
 uint64:
   title: hex encoded unsigned integer
   type: string

@@ -1,21 +1,10 @@
-- name: eth_sendTransaction
+- name: eth_sendUserOperation
   summary: Signs and submits a transaction.
   params:
     - name: Transaction
       required: true
       schema:
-        $ref: '#/components/schemas/GenericTransaction'
-  result:
-    name: Transaction hash
-    schema:
-      $ref: '#/components/schemas/hash32'
-- name: eth_sendRawTransaction
-  summary: Submits a raw transaction.
-  params:
-    - name: Transaction
-      required: true
-      schema:
-        $ref: '#/components/schemas/bytes'
+        $ref: '#/components/schemas/UserOperation'
   result:
     name: Transaction hash
     schema:

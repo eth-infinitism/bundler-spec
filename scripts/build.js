@@ -45,8 +45,8 @@ schemaFiles.forEach(file => {
 const doc = {
   openrpc: "1.2.4",
   info: {
-    title: "Ethereum JSON-RPC Specification",
-    description: "A specification of the standard interface for Ethereum clients.",
+    title: "Ethereum EIP-4337 bundler JSON-RPC Specification",
+    description: "A specification of the standard interface for EIP-4337 clients.",
     license: {
       name: "CC0-1.0",
       url: "https://creativecommons.org/publicdomain/zero/1.0/legalcode"
