@@ -1,11 +1,11 @@
 - name: eth_estimateUserOperationGas
   summary: Generates and returns an estimate of how much gas is necessary to allow the transaction to complete.
   params:
-    - name: Transaction
+    - name: UserOperation
       required: true
       schema:
         $ref: '#/components/schemas/UserOperation'
   result:
-    name: Gas used
+    name: Gas info
     schema:
-      $ref: '#/components/schemas/uint'
+      $ref: '#/components/schemas/GasInfo'

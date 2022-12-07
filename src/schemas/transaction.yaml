@@ -241,6 +241,19 @@ TransactionInfo:
           title: transaction index
           $ref: '#/components/schemas/uint'
     - $ref: '#/components/schemas/TransactionSigned'
+UserOperationTransactionInfo:
+  type: object
+  title: UserOperation transaction information
+  required:
+    - userOpHash
+    - transactionInfo
+  properties:
+    userOphash:
+      title: userOp hash
+      $ref: '#/components/schemas/hash32'
+    transactionInfo:
+      title: Transaction information
+      $ref: '#/components/schemas/TransactionInfo'
 GenericTransaction:
   type: object
   title: Transaction object generic to all types
@@ -337,3 +350,20 @@ UserOperation:
     signature:
       title: signature
       $ref: '#/components/schemas/bytes'
+GasInfo:
+  type: object
+  title: UserOperation Gas parameters
+  required:
+    - callGasLimit
+    - preVerificationGas
+    - verificationGas
+  properties:
+    callGasLimit:
+      title: callGasLimit
+      $ref: '#/components/schemas/uint'
+    preVerificationGas:
+      title: preVerificationGas
+      $ref: '#/components/schemas/uint'
+    verificationGas:
+      title: verificationGas
+      $ref: '#/components/schemas/uint'

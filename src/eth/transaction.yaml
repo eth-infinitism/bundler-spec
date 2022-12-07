@@ -1,14 +1,14 @@
 - name: eth_getUserOperationTransactionByHash
   summary: Returns the information about a transaction requested by transaction hash.
   params:
-    - name: Transaction hash
+    - name: UserOperation hash
       required: true
       schema:
         $ref: '#/components/schemas/hash32'
   result:
     name: Transaction information
     schema:
-      $ref: '#/components/schemas/TransactionInfo'
+      $ref: '#/components/schemas/UserOperationTransactionInfo'
 - name: eth_getUserOperationReceipt
   summary: Returns the receipt of a transaction by transaction hash.
   params:
