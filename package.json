@@ -1,7 +1,7 @@
 {
-  "name": "execution-apis",
+  "name": "bundler-apis",
   "version": "0.0.0",
-  "description": "Collection of JSON-RPC APIs provided by Ethereum 1.0 clients",
+  "description": "Collection of JSON-RPC APIs provided by Ethereum EIP-4337 bundlers",
   "main": "index.js",
   "type": "module",
   "scripts": {
@@ -16,14 +16,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ethereum/execution-apis.git"
+    "url": "git+https://github.com/eth-infinitism/bundler-spec.git"
   },
-  "author": "Ethereum",
+  "author": "eth-infinitism",
   "license": "CC0-1.0",
   "bugs": {
-    "url": "https://github.com/ethereum/execution-apis/issues"
+    "url": "https://github.com/eth-infinitism/bundler-spec/issues"
   },
-  "homepage": "https://github.com/ethereum/execution-apis#readme",
+  "homepage": "https://github.com/eth-infinitism/bundler-spec#readme",
   "devDependencies": {
     "@graphql-inspector/core": "~3.3.0",
     "@open-rpc/generator": "1.18.6",
