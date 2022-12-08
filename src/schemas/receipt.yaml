@@ -110,7 +110,7 @@ UserOperationReceiptInfo:
     - sender
     - nonce
     - actualGasCost
-    - actualGasPrice
+    - actualGasUsed
     - success
     - logs
     - receipt
@@ -127,11 +127,11 @@ UserOperationReceiptInfo:
     paymaster:
       title: paymaster
       $ref: '#/components/schemas/address'
-    acutalGasCost:
-      title: actual gas limit of the user operation
+    actualGasCost:
+      title: actual (gas price * gas used) of the user operation
       $ref: '#/components/schemas/uint'
-    actualGasPrice:
-      title: actual gas price of the user operation
+    actualGasUsed:
+      title: actual gas used of the user operation
       $ref: '#/components/schemas/uint'
     success:
       title: user operation revert status
