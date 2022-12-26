@@ -20,14 +20,11 @@ Mempool:
   type: array
   items:
     $ref: '#/components/schemas/MempoolEntry'
-Interval:
+Mode:
   description: bundling mode on test mode.
-  oneOf:
-    - type: string
-      enum:
-        - manual
-        - auto
-    - type: number
+  enum:
+    - manual
+    - auto
 ReputationEntry:
   description: Reputation information in the bundler, for a given address.
   type: object
