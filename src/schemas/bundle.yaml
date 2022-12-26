@@ -1,0 +1,57 @@
+MempoolEntry:
+  description: Mempool entry in the bundler, representing one user operation
+  type: object
+  required:
+    - userOp
+    - prefund
+  properties:
+    userOp:
+      title: User operation
+      $ref: '#/components/schemas/UserOperation'
+    prefund:
+      title: prefund
+      description: The calculated prefund required for the user operation execution.
+      $ref: '#/components/schemas/uint'
+    aggregator:
+      description: (optional) The aggregator used by the sender account.
+      $ref: '#/components/schemas/address'
+Mempool:
+  description: Bundler user operations mempool
+  type: array
+  items:
+    $ref: '#/components/schemas/MempoolEntry'
+Interval:
+  description: bundling mode on test mode.
+  oneOf:
+    - type: string
+      enum:
+        - manual
+        - auto
+    - type: number
+ReputationEntry:
+  description: Reputation information in the bundler, for a given address.
+  type: object
+  required:
+    - address
+    - opsSeen
+    - opsIncluded
+  properties:
+    address:
+      $ref: '#/components/schemas/address'
+    opsSeen:
+      description: Total number of user operations associated with the given address, observed by the bundler.
+      $ref: '#/components/schemas/uint'
+    opsIncluded:
+      description: Number of user operations included in a mined transaction, associated with the given address, observed by the bundler.
+      $ref: '#/components/schemas/uint'
+    status:
+      description: The serving status for the given address in the bundler.
+      enum:
+        - ok
+        - throttled
+        - banned
+Reputations:
+  description: Reputations information the bundler keeps on all observed addresses.
+  type: array
+  items:
+    $ref: '#/components/schemas/ReputationEntry'

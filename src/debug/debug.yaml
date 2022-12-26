@@ -1,0 +1,113 @@
+#- name: debug_getRawHeader
+#  summary: Returns an RLP-encoded header.
+#  params:
+#    - name: Block
+#      required: true
+#      schema:
+#        $ref: '#/components/schemas/BlockNumberOrTag'
+#  result:
+#    name: Header RLP
+#    schema:
+#      $ref: '#/components/schemas/bytes'
+#- name: debug_getRawBlock
+#  summary: Returns an RLP-encoded block.
+#  params:
+#    - name: Block
+#      required: true
+#      schema:
+#        $ref: '#/components/schemas/BlockNumberOrTag'
+#  result:
+#    name: Block RLP
+#    schema:
+#      $ref: '#/components/schemas/bytes'
+#- name: debug_getRawTransaction
+#  summary: Returns an array of EIP-2718 binary-encoded transactions.
+#  params:
+#    - name: Transaction hash
+#      required: true
+#      schema:
+#        $ref: '#/components/schemas/hash32'
+#  result:
+#    name: EIP-2718 binary-encoded transaction
+#    schema:
+#      $ref: '#/components/schemas/bytes'
+- name: debug_bundler_clearState
+  summary: Clears the bundler mempool and reputation data of paymasters/accounts/factories/aggregators.
+  params: []
+  result:
+    name: ok
+    schema:
+      $ref: '#/components/schemas/ok'
+- name: debug_bundler_dumpMempool
+  summary: Returns the current mempool
+  params: []
+  result:
+    name: Mempool
+    schema:
+      $ref: '#/components/schemas/Mempool'
+- name: debug_bundler_sendBundleNow
+  summary: Forces the bundler to execute the entire current mempool.
+  params: []
+  result:
+    name: Transaction Hash
+    schema:
+      $ref: '#/components/schemas/hash32'
+- name: debug_bundler_setBundleInterval
+  summary: Sets bundling mode and max mempool size.
+  params:
+    - name: interval
+      required: true
+      schema:
+        $ref: '#/components/schemas/Interval'
+    - name: maxPoolSize
+      required: true
+      schema:
+        title: Max mempool size
+        type: number
+  result:
+    name: ok
+    schema:
+      $ref: '#/components/schemas/ok'
+- name: debug_bundler_setReputation
+  summary: Sets reputation of given addresses.
+  params:
+    - name: reputations
+      required: true
+      schema:
+        $ref: '#/components/schemas/Reputations'
+  result:
+    name: ok
+    schema:
+      $ref: '#/components/schemas/ok'
+- name: debug_bundler_dumpReputation
+  summary: Returns the reputation data of all observed addresses.
+  params: []
+  result:
+    name: reputations
+    schema:
+      $ref: '#/components/schemas/Reputations'
+
+#- name: debug_getRawReceipts
+#  summary: Returns an array of EIP-2718 binary-encoded receipts.
+#  params:
+#    - name: Block
+#      required: true
+#      schema:
+#        $ref: '#/components/schemas/BlockNumberOrTag'
+#  result:
+#    name: Receipts
+#    schema:
+#      title: Receipt array
+#      type: array
+#      items:
+#        $ref: '#/components/schemas/bytes'
+#- name: debug_getBadBlocks
+#  summary: Returns an array of recent bad blocks that the client has seen on the network.
+#  params: []
+#  result:
+#    name: Blocks
+#    schema:
+#      title: Bad block array
+#      type: array
+#      items:
+#        $ref: '#/components/schemas/Block'

@@ -49,3 +49,7 @@ hash32:
   title: 32 byte hex value
   type: string
   pattern: ^0x([0-9a-f][0-9a-f]){0,32}$
+ok:
+  title: ok
+  type: string
+  pattern: ok
