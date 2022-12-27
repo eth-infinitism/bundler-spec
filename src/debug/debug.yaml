@@ -1,0 +1,62 @@
+- name: debug_bundler_clearState
+  summary: Clears the bundler mempool and reputation data of paymasters/accounts/factories/aggregators.
+  params: []
+  result:
+    name: ok
+    schema:
+      $ref: '#/components/schemas/ok'
+- name: debug_bundler_dumpMempool
+  summary: Returns the current mempool
+  params:
+    - name: entryPoint
+      required: true
+      schema:
+        $ref: '#/components/schemas/address'
+  result:
+    name: Mempool
+    schema:
+      $ref: '#/components/schemas/Mempool'
+- name: debug_bundler_sendBundleNow
+  summary: Forces the bundler to execute the entire current mempool.
+  params: []
+  result:
+    name: Transaction Hash
+    schema:
+      $ref: '#/components/schemas/hash32'
+- name: debug_bundler_setBundlingMode
+  summary: Toggles bundling mode between 'auto' and 'manual'
+  params:
+    - name: mode
+      required: true
+      schema:
+        $ref: '#/components/schemas/Mode'
+  result:
+    name: ok
+    schema:
+      $ref: '#/components/schemas/ok'
+- name: debug_bundler_setReputation
+  summary: Sets reputation of given addresses.
+  params:
+    - name: reputations
+      required: true
+      schema:
+        $ref: '#/components/schemas/Reputations'
+    - name: entryPoint
+      required: true
+      schema:
+        $ref: '#/components/schemas/address'
+  result:
+    name: ok
+    schema:
+      $ref: '#/components/schemas/ok'
+- name: debug_bundler_dumpReputation
+  summary: Returns the reputation data of all observed addresses.
+  params:
+    - name: entryPoint
+      required: true
+      schema:
+        $ref: '#/components/schemas/address'
+  result:
+    name: reputations
+    schema:
+      $ref: '#/components/schemas/Reputations'

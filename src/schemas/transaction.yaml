@@ -301,7 +301,7 @@ GenericTransaction:
       $ref: '#/components/schemas/uint'
 UserOperation:
   type: object
-  title: Transaction object generic to all types
+  title: ERC-4337 User Operation
   required:
     - sender
     - nonce
