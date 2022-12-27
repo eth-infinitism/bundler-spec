@@ -1,5 +1,5 @@
-# Execution API Specification
-
+# ERC-4337 Bundler API Specification
+This repository is based on https://github.com/ethereum/execution-apis/
 ## JSON-RPC
 
 [View the spec][playground]
