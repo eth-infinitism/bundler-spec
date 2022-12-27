@@ -3,18 +3,10 @@ MempoolEntry:
   type: object
   required:
     - userOp
-    - prefund
   properties:
     userOp:
       title: User operation
       $ref: '#/components/schemas/UserOperation'
-    prefund:
-      title: prefund
-      description: The calculated prefund required for the user operation execution.
-      $ref: '#/components/schemas/uint'
-    aggregator:
-      description: (optional) The aggregator used by the sender account.
-      $ref: '#/components/schemas/address'
 Mempool:
   description: Bundler user operations mempool
   type: array

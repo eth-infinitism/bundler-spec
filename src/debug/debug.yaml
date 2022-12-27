@@ -1,36 +1,3 @@
-#- name: debug_getRawHeader
-#  summary: Returns an RLP-encoded header.
-#  params:
-#    - name: Block
-#      required: true
-#      schema:
-#        $ref: '#/components/schemas/BlockNumberOrTag'
-#  result:
-#    name: Header RLP
-#    schema:
-#      $ref: '#/components/schemas/bytes'
-#- name: debug_getRawBlock
-#  summary: Returns an RLP-encoded block.
-#  params:
-#    - name: Block
-#      required: true
-#      schema:
-#        $ref: '#/components/schemas/BlockNumberOrTag'
-#  result:
-#    name: Block RLP
-#    schema:
-#      $ref: '#/components/schemas/bytes'
-#- name: debug_getRawTransaction
-#  summary: Returns an array of EIP-2718 binary-encoded transactions.
-#  params:
-#    - name: Transaction hash
-#      required: true
-#      schema:
-#        $ref: '#/components/schemas/hash32'
-#  result:
-#    name: EIP-2718 binary-encoded transaction
-#    schema:
-#      $ref: '#/components/schemas/bytes'
 - name: debug_bundler_clearState
   summary: Clears the bundler mempool and reputation data of paymasters/accounts/factories/aggregators.
   params: []
@@ -40,7 +7,11 @@
       $ref: '#/components/schemas/ok'
 - name: debug_bundler_dumpMempool
   summary: Returns the current mempool
-  params: []
+  params:
+    - name: entryPoint
+      required: true
+      schema:
+        $ref: '#/components/schemas/address'
   result:
     name: Mempool
     schema:
@@ -70,39 +41,22 @@
       required: true
       schema:
         $ref: '#/components/schemas/Reputations'
+    - name: entryPoint
+      required: true
+      schema:
+        $ref: '#/components/schemas/address'
   result:
     name: ok
     schema:
       $ref: '#/components/schemas/ok'
 - name: debug_bundler_dumpReputation
   summary: Returns the reputation data of all observed addresses.
-  params: []
+  params:
+    - name: entryPoint
+      required: true
+      schema:
+        $ref: '#/components/schemas/address'
   result:
     name: reputations
     schema:
       $ref: '#/components/schemas/Reputations'
-
-#- name: debug_getRawReceipts
-#  summary: Returns an array of EIP-2718 binary-encoded receipts.
-#  params:
-#    - name: Block
-#      required: true
-#      schema:
-#        $ref: '#/components/schemas/BlockNumberOrTag'
-#  result:
-#    name: Receipts
-#    schema:
-#      title: Receipt array
-#      type: array
-#      items:
-#        $ref: '#/components/schemas/bytes'
-#- name: debug_getBadBlocks
-#  summary: Returns an array of recent bad blocks that the client has seen on the network.
-#  params: []
-#  result:
-#    name: Blocks
-#    schema:
-#      title: Bad block array
-#      type: array
-#      items:
-#        $ref: '#/components/schemas/Block'
