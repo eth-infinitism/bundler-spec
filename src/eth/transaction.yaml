@@ -1,4 +1,4 @@
-- name: eth_getUserOperationTransactionByHash
+- name: eth_getUserOperationByHash
   summary: Returns the information about a transaction requested by transaction hash.
   params:
     - name: UserOperation hash

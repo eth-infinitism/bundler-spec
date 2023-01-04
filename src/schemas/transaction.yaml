@@ -245,15 +245,27 @@ UserOperationTransactionInfo:
   type: object
   title: UserOperation transaction information
   required:
-    - userOpHash
-    - transactionInfo
+    - userOperation
+    - entryPoint
+    - blockNumber
+    - blockHash
+    - transactionHash
   properties:
-    userOphash:
-      title: userOp hash
-      $ref: '#/components/schemas/hash32'
-    transactionInfo:
-      title: Transaction information
-      $ref: '#/components/schemas/TransactionInfo'
+    userOperation:
+      title: UserOperation
+      $ref: '#/components/schemas/UserOperation'
+    entryPoint:
+      title: EntryPoint address
+      $ref: '#/components/schemas/address'
+      blockNumber:
+        title: Block Number
+        $ref: '#/components/schemas/uint'
+      blockHash:
+        title: Block Hash
+        $ref: '#/components/schemas/hash32'
+      transactionHash:
+        title: Transaction Hash
+        $ref: '#/components/schemas/hash32'
 GenericTransaction:
   type: object
   title: Transaction object generic to all types
