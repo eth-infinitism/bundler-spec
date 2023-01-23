@@ -155,9 +155,9 @@ For any optional queueing, Bundlers SHOULD maintain maximum queue sizes to avoid
 There are two primary global topics used to propagate user operations (`UserOperationWithEntryPoint`)
 and aggregate user operation hashes (`NewPooledUserOperationsHashes`) to all nodes on the network.
 
-##### `UserOperationWithEntryPoint`
+##### `UserOperationsWithEntryPoint`
 
-The `UserOperationWithEntryPoint` topic is the concatenation of EntryPoint address and UserOperation message serialized using SSZ
+The `UserOperatiosnWithEntryPoint` topic is the concatenation of EntryPoint address and UserOperation message serialized using SSZ
 
 ##### `NewPooledUserOperationsHashes`
 
@@ -203,7 +203,7 @@ class UserOp(Container):
 #### `UserOperationWithEntryPoint`
 
 ```python
-class UserOperationWithEntryPoint(Container):
+class UserOperationsWithEntryPoint(Container):
     entry_point_contract: Address
     verified_at_block_hash: uint256
     chain_id: uint256
@@ -216,7 +216,7 @@ class UserOperationWithEntryPoint(Container):
 class GetPooledUserOps(Container):
     request_id: uint256
     chain_id: uint256
-    entry_point_address: List[Address, MAX_OPS_PER_REQUEST]
+    mempool_ids: List[bytes32, MAX_OPS_PER_REQUEST]
 ```
 
 #### `PooledUserOperations`
