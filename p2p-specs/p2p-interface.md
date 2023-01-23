@@ -80,14 +80,28 @@ Bundlers MUST support [multistream-select 1.0](https://github.com/multiformats/m
 and MAY support [multiselect 2.0](https://github.com/libp2p/specs/pull/95) when the spec solidifies.
 Once all Bundlers have implementations for multiselect 2.0, multistream-select 1.0 MAY be phased out.
 
-# Bundler interaction domains
+## Multiplexing
+Like Ethereum consensus clients p2p specification, the Bundlers ought to support both multiplexer implementations of mplex and yamux. Their protocol IDs are, respectively: /mplex/6.7.0 and /yamux/1.0.0.
+
+Clients MUST support mplex and MAY support yamux. If both are supported by the client, yamux MUST take precedence during negotiation. See the Rationale section below for tradeoffs.
+
+# Bundler network interaction domains
 
 ## Configuration
 
 This section outlines constants that are used in this spec.
 
-| Name | Value | Description |
-|---|---|---|
+| Name                | Value                    | Description                                               |
+|---------------------|--------------------------|-----------------------------------------------------------|
+| GOSSIP_MAX_SIZE     | 2**20 (= 1048576, 1 MiB) | The maximum allowed size of uncompressed gossip messages. |
+|---------------------|--------------------------|-----------------------------------------------------------|
+| MAX_OPS_PER_REQUEST | 1024                     | Maximum number of UserOps in a single request.            |
+|---------------------|--------------------------|-----------------------------------------------------------|
+| RESP_TIMEOUT	      | 10s       	             | The maximum time for complete response transfer.          |
+|---------------------|--------------------------|-----------------------------------------------------------|
+| TTFB_TIMEOUT        |	 5s	                     | The maximum time to wait for first byte of request        |
+|                     |                          | response (time-to-first-byte).                            |
+|---------------------|--------------------------|-----------------------------------------------------------|
 
 
 ## MetaData
@@ -96,14 +110,15 @@ Bundlers MUST locally store the following `MetaData`:
 
 ```
 (
-  
+  seq_number: uint64
+  bundler_nets: Bitvector[BUNDLER_SUBNET_COUNT]
 )
 ```
 
 Where
 
-- .
-- .
+`seq_number` is a `uint64` starting at 0 used to version the node's metadata. If any other field in the local `MetaData` changes, the node MUST increment `seq_number` by 1.
+`bundler_nets` is a Bitvector representing the node's persistent mempool subnet subscriptions.
 
 
 ## The gossip domain: gossipsub
@@ -117,7 +132,7 @@ Topics are plain UTF-8 strings and are encoded on the wire as determined by prot
 Topic strings have form: `/erc4337/UserOpsWithEntryPoint/Name/Encoding`.
 This defines both the type of data being sent on the topic and how the data field of the message is encoded.
 
-- `UserOpsWithEntryPoint` - the lowercase hex-encoded (no "0x" prefix) bytes of `entry_point_contract_address` + `user_operation` 
+- `UserOpsWithEntryPoint` - the lowercase hex-encoded (no "0x" prefix) bytes of `mempool_id` + `user_operation` 
 
 Each gossipsub [message](https://github.com/libp2p/go-libp2p-pubsub/blob/master/pb/rpc.proto#L17-L24) has a maximum size of `GOSSIP_MAX_SIZE`.
 Bundlers MUST reject (fail validation) messages that are over this size limit.
@@ -137,10 +152,12 @@ and (2) some message `data` can fail to snappy decompress altogether.
 
 The payload is carried in the `data` field of a gossipsub message, and varies depending on the topic:
 
-| Name                             | Message Type              |
-|----------------------------------|---------------------------|
-| `UserOperationWithEntryPoint`    | ``                        |
-| `NewPooledUserOperationsHashes`  | ``                        |
+| Name                           | Message Type                    |
+|--------------------------------|---------------------------------|
+| `user_ops_with"_entry_point`   | `UserOperationsWithEntryPoint`  |
+| `pooled_user_ops_hashes`       | `NewPooledUserOperationsHashes` |
+| `get_pooled_user_ops`          | `GetPooledUserOps`              |
+| `pooled_user_ops`              | `PooledUserOperations`          |
 
 
 Bundlers MUST reject (fail validation) messages containing an incorrect type, or invalid payload.
@@ -214,15 +231,14 @@ class UserOperationsWithEntryPoint(Container):
 
 ```python
 class GetPooledUserOps(Container):
-    request_id: uint256
-    chain_id: uint256
-    mempool_ids: List[bytes32, MAX_OPS_PER_REQUEST]
+    mempool_id: bytes32
+    user_operations: List[UserOp, MAX_OPS_PER_REQUEST]
 ```
 
-#### `PooledUserOperations`
+#### `PooledUserOperationsOfEntryPoint`
 
 ```python
-class PooledUserOperations(Container):
+class PooledUserOperationsOfEntryPoint(Container):
     chain_id: uint256
     entry_point_address: Address
     user_operations: List[UserOp, MAX_OPS_PER_REQUEST]
