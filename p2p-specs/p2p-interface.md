@@ -159,6 +159,7 @@ The payload is carried in the `data` field of a gossipsub message, and varies de
 | `get_pooled_user_ops`          | `GetPooledUserOps`              |
 | `pooled_user_ops`              | `PooledUserOperations`          |
 
+**Notice**: @TODO - Need to separate ReqResp topics from global topics.
 
 Bundlers MUST reject (fail validation) messages containing an incorrect type, or invalid payload.
 
