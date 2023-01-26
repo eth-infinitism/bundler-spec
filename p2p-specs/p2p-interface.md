@@ -110,14 +110,14 @@ Bundlers MUST locally store the following `MetaData`:
 ```
 (
   seq_number: uint64
-  bundler_nets: Bitvector[BUNDLER_SUBNET_COUNT]
+  mempool_nets: Bitvector[MEMPOOL_SUBNET_COUNT]
 )
 ```
 
 Where
 
 `seq_number` is a `uint64` starting at 0 used to version the node's metadata. If any other field in the local `MetaData` changes, the node MUST increment `seq_number` by 1.
-`bundler_nets` is a Bitvector representing the node's persistent mempool subnet subscriptions.
+`mempool_nets` is a Bitvector representing the node's persistent mempool subnet subscriptions.
 
 
 ## The gossip domain: gossipsub
