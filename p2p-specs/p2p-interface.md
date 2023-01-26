@@ -172,13 +172,19 @@ and aggregate user operation hashes (`NewPooledUserOperationsHashes`) to all nod
 
 The `user_ops_with_entry_point` topic is the concatenation of EntryPoint address and UserOperation message serialized using SSZ
 
-**Notice**: @TODO add validation here
+The following validations MUST pass before forwarding the `user_ops_with_entry_point` on the network
+- TBD
+- TBD
+- TBD
 
 ##### `pooled_user_ops_hashes`
 
 The `pooled_user_ops_hashes` topic is used solely for propagating to all the connected nodes on the networks. One or more UserOps that have appeared in the network and which have not yet been included in a block are propagated to a fraction of the nodes connected to the network.
 
-**Notice**: @TODO add validation here
+The following validations MUST pass before forwarding the `pooled_user_ops_hashes` on the network
+- TBD
+- TBD
+- TBD
 
 ## The Req/Resp domain
 
@@ -359,10 +365,10 @@ In case of an invalid input (header or payload), a reader MUST:
 
 All messages that contain only a single field MUST be encoded directly as the type of that field and MUST NOT be encoded as an SSZ container.
 
-Responses that are SSZ-lists (for example `List[SignedBeaconBlock, ...]`) send their
+Responses that are SSZ-lists (for example `List[UserOperationsWithEntryPoint, ...]`) send their
 constituents individually as `response_chunk`s. For example, the
-`List[SignedBeaconBlock, ...]` response type sends zero or more `response_chunk`s.
-Each _successful_ `response_chunk` contains a single `SignedBeaconBlock` payload.
+`List[UserOperationsWithEntryPoint, ...]` response type sends zero or more `response_chunk`s.
+Each _successful_ `response_chunk` contains a single `UserOperationsWithEntryPoint` payload.
 
 ### Messages
 
