@@ -41,6 +41,11 @@ It consists of four main sections:
       - [Goodbye](#goodbye)
       - [Ping](#ping)
       - [GetMetaData](#getmetadata)
+- [The discovery domain: discv5](#the-discovery-domain-discv5)
+    - [Integration into libp2p stacks](#integration-into-libp2p-stacks)
+    - [ENR structure](#enr-structure)
+      - [Mempool subnet bitfield](#mempool-subnet-bitfield)
+      - [`account_abstraction` field](#account_abstraction-field)
 - [Container Specifications](#container-specs)
 - [Design decision rationale](#design-decision-rationale)
 
@@ -496,7 +501,80 @@ Response Content:
 
 The `pooled_user_ops_by_hashes` requests UserOps from the recipients UserOp mempool for a given EntryPoint contract address. The recommended soft limit for PooledUserOpsByHashes requests is MAX_OPS_PER_REQUEST hashes. The recipient may enforce an arbitrary limit on the response (size or serving time), which must not be considered a protocol violation.
  
+## The discovery domain: discv5
 
+Discovery Version 5 ([discv5](https://github.com/ethereum/devp2p/blob/master/discv5/discv5.md)) (Protocol version v5.1) is used for peer discovery.
+
+`discv5` is a standalone protocol, running on UDP on a dedicated port, meant for peer discovery only.
+`discv5` supports self-certified, flexible peer records (ENRs) and topic-based advertisement, both of which are (or will be) requirements in this context.
+
+### Integration into libp2p stacks
+
+`discv5` SHOULD be integrated into the bundler’s libp2p stack by implementing an adaptor
+to make it conform to the [service discovery](https://github.com/libp2p/go-libp2p-core/blob/master/discovery/discovery.go)
+and [peer routing](https://github.com/libp2p/go-libp2p-core/blob/master/routing/routing.go#L36-L44) abstractions and interfaces (go-libp2p links provided).
+
+Inputs to operations include peer IDs (when locating a specific peer) or capabilities (when searching for peers with a specific capability),
+and the outputs will be multiaddrs converted from the ENR records returned by the discv5 backend.
+
+This integration enables the libp2p stack to subsequently form connections and streams with discovered peers.
+
+### ENR structure
+
+The Ethereum Node Record (ENR) for a bundler client MUST contain the following entries
+(exclusive of the sequence number and signature, which MUST be present in an ENR):
+
+-  The compressed secp256k1 publickey, 33 bytes (`secp256k1` field).
+
+The ENR MAY contain the following entries:
+
+-  An IPv4 address (`ip` field) and/or IPv6 address (`ip6` field).
+-  A TCP port (`tcp` field) representing the local libp2p listening port.
+-  A UDP port (`udp` field) representing the local discv5 listening port.
+
+Specifications of these parameters can be found in the [ENR Specification](http://eips.ethereum.org/EIPS/eip-778).
+
+#### Mempools bitfield
+
+The ENR `mempools` entry signifies the mempools subnet bitfield with the following form
+to more easily discover peers participating in particular mempool id gossip subnets.
+
+| Key          | Value                                            |
+|:-------------|:-------------------------------------------------|
+| `mempools`    | SSZ `Bitvector[MEMPOOL_ID_SUBNET_COUNT]`        |
+
+If a node's `MetaData.mempools` has any non-zero bit, the ENR MUST include the `mempools` entry with the same value as `MetaData.mempools`.
+
+If a node's `MetaData.mempools` is composed of all zeros, the ENR MAY optionally include the `mempools` entry or leave it out entirely.
+
+#### `account_abstraction` field
+
+ENRs MUST carry a generic `account_abstraction` key with an 16-byte value of the node's current state(??) to ensure connections are made with peers on the intended Ethereum network.
+
+| Key                         | Value                              |
+|:----------------------------|:-----------------------------------|
+| `account_abstraction`       | SSZ `ENRAccountAbstraction`        |
+
+Specifically, the value of the `account_abstraction` key MUST be the following SSZ encoded object (`ENRAccountAbstraction`)
+
+```
+(
+    ???
+)
+```
+
+where the fields of `ENRAccountAbstraction` are defined as
+
+* 
+* 
+* 
+
+
+Clients SHOULD connect to peers with ``, ``, and `` that match local values.
+
+Clients MAY connect to peers with the same `` but a different ``/``.
+Unless `ENRAccountAbstraction` is manually updated to matching prior to the earlier `` of the two clients,
+these connecting clients will be unable to successfully interact starting at the earlier ``.
 
 ## Container Specifications
 
@@ -529,19 +607,10 @@ class UserOperationsWithEntryPoint(Container):
     user_operations: List[UserOp, MAX_OPS_PER_REQUEST]
 ```
 
-#### `GetPooledUserOps`
+#### `PooledUserOps`
 
 ```python
-class GetPooledUserOps(Container):
+class PooledUserOps(Container):
     mempool_id: bytes32
-    user_operations: List[UserOp, MAX_OPS_PER_REQUEST]
-```
-
-#### `PooledUserOperationsOfEntryPoint`
-
-```python
-class PooledUserOperationsOfEntryPoint(Container):
-    chain_id: uint256
-    entry_point_address: Address
     user_operations: List[UserOp, MAX_OPS_PER_REQUEST]
 ```
