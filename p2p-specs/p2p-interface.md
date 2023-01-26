@@ -95,17 +95,12 @@ Clients MUST support mplex and MAY support yamux. If both are supported by the c
 
 This section outlines constants that are used in this spec.
 
-| Name                 | Value                    | Description                                               |
-|----------------------|--------------------------|-----------------------------------------------------------|
-| `GOSSIP_MAX_SIZE`    | 2**20 (= 1048576, 1 MiB) | The maximum allowed size of uncompressed gossip messages. |
-|----------------------|--------------------------|-----------------------------------------------------------|
-| `MAX_OPS_PER_REQUEST`| 256                      | Maximum number of UserOps in a single request.            |
-|----------------------|--------------------------|-----------------------------------------------------------|
-| `RESP_TIMEOUT`	     | 10s       	              | The maximum time for complete response transfer.          |
-|----------------------|--------------------------|-----------------------------------------------------------|
-| `TTFB_TIMEOUT`       |	 5s	                    | The maximum time to wait for first byte of request        |
-|                      |                          | response (time-to-first-byte).                            |
-|----------------------|--------------------------|-----------------------------------------------------------|
+| Name | Value | Description |
+|---|---|---|
+| `GOSSIP_MAX_SIZE`    | `2**20` (= 1048576, 1 MiB) | The maximum allowed size of uncompressed gossip messages. |
+| `MAX_OPS_PER_REQUEST`| `256` | Maximum number of UserOps in a single request. |
+| `RESP_TIMEOUT`	     | `10s` | The maximum time for complete response transfer. |
+| `TTFB_TIMEOUT`       | `5s` | The maximum time to wait for first byte of request response (time-to-first-byte). |
 
 
 ## MetaData
