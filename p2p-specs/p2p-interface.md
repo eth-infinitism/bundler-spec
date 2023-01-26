@@ -26,10 +26,9 @@ It consists of four main sections:
   - [The gossip domain: gossipsub](#the-gossip-domain-gossipsub)
     - [Topics and messages](#topics-and-messages)
       - [Global topics](#global-topics)
-        - [`topic_1`](#topic_1)
-        - [`topic_2`](#topic_2)
+        - [`user_ops_with_entry_point`](#user_ops_with_entry_point)
+        - [`pooled_user_ops_hashes`](#pooled_user_ops_hashes)
     - [Encodings](#encodings)
-  - [Container Specifications](#container-specs)
   - [The Req/Resp domain](#the-reqresp-domain)
     - [Protocol identification](#protocol-identification)
     - [Req/Resp interaction](#reqresp-interaction)
@@ -42,8 +41,8 @@ It consists of four main sections:
       - [Goodbye](#goodbye)
       - [Ping](#ping)
       - [GetMetaData](#getmetadata)
+- [Container Specifications](#container-specs)
 - [Design decision rationale](#design-decision-rationale)
-- [libp2p implementations matrix](#libp2p-implementations-matrix)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 <!-- /TOC -->
@@ -91,17 +90,17 @@ Clients MUST support mplex and MAY support yamux. If both are supported by the c
 
 This section outlines constants that are used in this spec.
 
-| Name                | Value                    | Description                                               |
-|---------------------|--------------------------|-----------------------------------------------------------|
-| GOSSIP_MAX_SIZE     | 2**20 (= 1048576, 1 MiB) | The maximum allowed size of uncompressed gossip messages. |
-|---------------------|--------------------------|-----------------------------------------------------------|
-| MAX_OPS_PER_REQUEST | 1024                     | Maximum number of UserOps in a single request.            |
-|---------------------|--------------------------|-----------------------------------------------------------|
-| RESP_TIMEOUT	      | 10s       	             | The maximum time for complete response transfer.          |
-|---------------------|--------------------------|-----------------------------------------------------------|
-| TTFB_TIMEOUT        |	 5s	                     | The maximum time to wait for first byte of request        |
-|                     |                          | response (time-to-first-byte).                            |
-|---------------------|--------------------------|-----------------------------------------------------------|
+| Name                 | Value                    | Description                                               |
+|----------------------|--------------------------|-----------------------------------------------------------|
+| `GOSSIP_MAX_SIZE`    | 2**20 (= 1048576, 1 MiB) | The maximum allowed size of uncompressed gossip messages. |
+|----------------------|--------------------------|-----------------------------------------------------------|
+| `MAX_OPS_PER_REQUEST`| 256                      | Maximum number of UserOps in a single request.            |
+|----------------------|--------------------------|-----------------------------------------------------------|
+| `RESP_TIMEOUT`	     | 10s       	              | The maximum time for complete response transfer.          |
+|----------------------|--------------------------|-----------------------------------------------------------|
+| `TTFB_TIMEOUT`       |	 5s	                    | The maximum time to wait for first byte of request        |
+|                      |                          | response (time-to-first-byte).                            |
+|----------------------|--------------------------|-----------------------------------------------------------|
 
 
 ## MetaData
@@ -154,12 +153,8 @@ The payload is carried in the `data` field of a gossipsub message, and varies de
 
 | Name                           | Message Type                    |
 |--------------------------------|---------------------------------|
-| `user_ops_with"_entry_point`   | `UserOperationsWithEntryPoint`  |
-| `pooled_user_ops_hashes`       | `NewPooledUserOperationsHashes` |
-| `get_pooled_user_ops`          | `GetPooledUserOps`              |
-| `pooled_user_ops`              | `PooledUserOperations`          |
-
-**Notice**: @TODO - Need to separate ReqResp topics from global topics.
+| `user_ops_with_entry_point`    | `UserOperationsWithEntryPoint`  |
+| `pooled_user_ops_hashes`       | `PooledUserOperationsHashes`    |
 
 Bundlers MUST reject (fail validation) messages containing an incorrect type, or invalid payload.
 
@@ -173,28 +168,334 @@ For any optional queueing, Bundlers SHOULD maintain maximum queue sizes to avoid
 There are two primary global topics used to propagate user operations (`UserOperationWithEntryPoint`)
 and aggregate user operation hashes (`NewPooledUserOperationsHashes`) to all nodes on the network.
 
-##### `UserOperationsWithEntryPoint`
+##### `user_ops_with_entry_point`
 
-The `UserOperatiosnWithEntryPoint` topic is the concatenation of EntryPoint address and UserOperation message serialized using SSZ
+The `user_ops_with_entry_point` topic is the concatenation of EntryPoint address and UserOperation message serialized using SSZ
 
-##### `NewPooledUserOperationsHashes`
+**Notice**: @TODO add validation here
 
-The `NewPooledUserOperationsHashes` topic is used solely for propagating to all the connected nodes on the networks. One or more UserOps that have appeared in the network and which have not yet been included in a block are propagated to a fraction of the nodes connected to the network.
+##### `pooled_user_ops_hashes`
 
+The `pooled_user_ops_hashes` topic is used solely for propagating to all the connected nodes on the networks. One or more UserOps that have appeared in the network and which have not yet been included in a block are propagated to a fraction of the nodes connected to the network.
 
-##### `GetPooledUserOps`
+**Notice**: @TODO add validation here
 
-The `GetPooledUserOps` requests UserOps from the recipients UserOp mempool for a given EntryPoint contract address. The recommended soft limit for GetPooledUserOps requests is 256 hashes (8 KiB). The recipient may enforce an arbitrary limit on the response (size or serving time), which must not be considered a protocol violation.
+## The Req/Resp domain
 
-##### `PooledUserOperations`
+### Protocol identification
 
-The `PooledUserOperations` is a response to the `GetPooledUserOps`, returning the requested UserOperations from the local pool. The items in the list are UserOps in the format described in ERC4337 specification. 
+Each message type is segregated into its own libp2p protocol ID, which is a case-sensitive UTF-8 string of the form:
 
-## Constants
+```
+/ProtocolPrefix/MessageName/SchemaVersion/Encoding
+```
 
-| Name                             | Message Type              |
-|----------------------------------|---------------------------|
-| `MAX_OPS_PER_REQUEST`            | `uint64(2**10)` = 1024    |
+With:
+
+- `ProtocolPrefix` - messages are grouped into families identified by a shared libp2p protocol name prefix.
+  In this case, we use `/account_abstraction/erc4337/req`.
+- `MessageName` - each request is identified by a name consisting of English alphabet, digits and underscores (`_`).
+- `SchemaVersion` - an ordinal version number (e.g. 1, 2, 3…).
+  Each schema is versioned to facilitate backward and forward-compatibility when possible.
+- `Encoding` - while the schema defines the data types in more abstract terms,
+  the encoding strategy describes a specific representation of bytes that will be transmitted over the wire.
+  See the [Encodings](#Encoding-strategies) section for further details.
+
+This protocol segregation allows libp2p `multistream-select 1.0` / `multiselect 2.0`
+to handle the request type, version, and encoding negotiation before establishing the underlying streams.
+
+### Req/Resp interaction
+
+We use ONE stream PER request/response interaction.
+Streams are closed when the interaction finishes, whether in success or in error.
+
+Request/response messages MUST adhere to the encoding specified in the protocol name and follow this structure (relaxed BNF grammar):
+
+```
+request   ::= <encoding-dependent-header> | <encoded-payload>
+response  ::= <response_chunk>*
+response_chunk  ::= <result> | <encoding-dependent-header> | <encoded-payload>
+result    ::= “0” | “1” | “2” | [“128” ... ”255”]
+```
+
+The encoding-dependent header may carry metadata or assertions such as the encoded payload length, for integrity and attack proofing purposes.
+Because req/resp streams are single-use and stream closures implicitly delimit the boundaries, it is not strictly necessary to length-prefix payloads;
+however, certain encodings like SSZ do, for added security.
+
+A `response` is formed by zero or more `response_chunk`s.
+Responses that consist of a single SSZ-list (such as `GetPooledUserOps` and `PooledUserOperations`) send each list item as a `response_chunk`.
+All other response types (non-Lists) send a single `response_chunk`.
+
+For both `request`s and `response`s, the `encoding-dependent-header` MUST be valid,
+and the `encoded-payload` must be valid within the constraints of the `encoding-dependent-header`.
+This includes type-specific bounds on payload size for some encoding strategies.
+Regardless of these type specific bounds, a global maximum uncompressed byte size of `MAX_CHUNK_SIZE` MUST be applied to all method response chunks.
+
+Clients MUST ensure that lengths are within these bounds; if not, they SHOULD reset the stream immediately.
+Clients tracking peer reputation MAY decrement the score of the misbehaving peer under this circumstance.
+
+#### Requesting side
+
+Once a new stream with the protocol ID for the request type has been negotiated, the full request message SHOULD be sent immediately.
+The request MUST be encoded according to the encoding strategy.
+
+The requester MUST close the write side of the stream once it finishes writing the request message.
+At this point, the stream will be half-closed.
+
+The requester MUST wait a maximum of `TTFB_TIMEOUT` for the first response byte to arrive (time to first byte—or TTFB—timeout).
+On that happening, the requester allows a further `RESP_TIMEOUT` for each subsequent `response_chunk` received.
+
+If any of these timeouts fire, the requester SHOULD reset the stream and deem the req/resp operation to have failed.
+
+A requester SHOULD read from the stream until either:
+1. An error result is received in one of the chunks (the error payload MAY be read before stopping).
+2. The responder closes the stream.
+3. Any part of the `response_chunk` fails validation.
+4. The maximum number of requested chunks are read.
+
+For requests consisting of a single valid `response_chunk`,
+the requester SHOULD read the chunk fully, as defined by the `encoding-dependent-header`, before closing the stream.
+
+#### Responding side
+
+Once a new stream with the protocol ID for the request type has been negotiated,
+the responder SHOULD process the incoming request and MUST validate it before processing it.
+Request processing and validation MUST be done according to the encoding strategy, until EOF (denoting stream half-closure by the requester).
+
+The responder MUST:
+
+1. Use the encoding strategy to read the optional header.
+2. If there are any length assertions for length `N`, it should read exactly `N` bytes from the stream, at which point an EOF should arise (no more bytes).
+  Should this not be the case, it should be treated as a failure.
+3. Deserialize the expected type, and process the request.
+4. Write the response which may consist of zero or more `response_chunk`s (result, optional header, payload).
+5. Close their write side of the stream. At this point, the stream will be fully closed.
+
+If steps (1), (2), or (3) fail due to invalid, malformed, or inconsistent data, the responder MUST respond in error.
+Clients tracking peer reputation MAY record such failures, as well as unexpected events, e.g. early stream resets.
+
+The entire request should be read in no more than `RESP_TIMEOUT`.
+Upon a timeout, the responder SHOULD reset the stream.
+
+The responder SHOULD send a `response_chunk` promptly.
+Chunks start with a **single-byte** response code which determines the contents of the `response_chunk` (`result` particle in the BNF grammar above).
+For multiple chunks, only the last chunk is allowed to have a non-zero error code (i.e. The chunk stream is terminated once an error occurs).
+
+The response code can have one of the following values, encoded as a single unsigned byte:
+
+-  0: **Success** -- a normal response follows, with contents matching the expected message schema and encoding specified in the request.
+-  1: **InvalidRequest** -- the contents of the request are semantically invalid, or the payload is malformed, or could not be understood.
+  The response payload adheres to the `ErrorMessage` schema (described below).
+-  2: **ServerError** -- the responder encountered an error while processing the request.
+  The response payload adheres to the `ErrorMessage` schema (described below).
+-  3: **ResourceUnavailable** -- the responder does not have requested resource.
+  The response payload adheres to the `ErrorMessage` schema (described below).
+  *Note*: This response code is only valid as a response where specified.
+
+Clients MAY use response codes above `128` to indicate alternative, erroneous request-specific responses.
+
+The range `[4, 127]` is RESERVED for future usages, and should be treated as error if not recognized expressly.
+
+The `ErrorMessage` schema is:
+
+```
+(
+  error_message: List[byte, 256]
+)
+```
+
+*Note*: By convention, the `error_message` is a sequence of bytes that MAY be interpreted as a UTF-8 string (for debugging purposes).
+Clients MUST treat as valid any byte sequences.
+
+### Encoding strategies
+
+The token of the negotiated protocol ID specifies the type of encoding to be used for the req/resp interaction.
+Only one value is possible at this time:
+
+-  `ssz_snappy`: The contents are first [SSZ-encoded](../../ssz/simple-serialize.md)
+  and then compressed with [Snappy](https://github.com/google/snappy) frames compression.
+  For objects containing a single field, only the field is SSZ-encoded not a container with a single field.
+  This encoding type MUST be supported by all clients.
+
+#### SSZ-snappy encoding strategy
+
+The [SimpleSerialize (SSZ) specification](../../ssz/simple-serialize.md) outlines how objects are SSZ-encoded.
+
+To achieve snappy encoding on top of SSZ, we feed the serialized form of the object to the Snappy compressor on encoding.
+The inverse happens on decoding.
+
+Snappy has two formats: "block" and "frames" (streaming).
+To support large requests and response chunks, snappy-framing is used.
+
+Since snappy frame contents [have a maximum size of `65536` bytes](https://github.com/google/snappy/blob/master/framing_format.txt#L104)
+and frame headers are just `identifier (1) + checksum (4)` bytes, the expected buffering of a single frame is acceptable.
+
+**Encoding-dependent header:** Req/Resp protocols using the `ssz_snappy` encoding strategy MUST encode the length of the raw SSZ bytes,
+encoded as an unsigned [protobuf varint](https://developers.google.com/protocol-buffers/docs/encoding#varints).
+
+*Writing*: By first computing and writing the SSZ byte length, the SSZ encoder can then directly write the chunk contents to the stream.
+When Snappy is applied, it can be passed through a buffered Snappy writer to compress frame by frame.
+
+*Reading*: After reading the expected SSZ byte length, the SSZ decoder can directly read the contents from the stream.
+When snappy is applied, it can be passed through a buffered Snappy reader to decompress frame by frame.
+
+Before reading the payload, the header MUST be validated:
+- The unsigned protobuf varint used for the length-prefix MUST not be longer than 10 bytes, which is sufficient for any `uint64`.
+- The length-prefix is within the expected [size bounds derived from the payload SSZ type](#what-are-ssz-type-size-bounds).
+
+After reading a valid header, the payload MAY be read, while maintaining the size constraints from the header.
+
+A reader SHOULD NOT read more than `max_encoded_len(n)` bytes after reading the SSZ length-prefix `n` from the header.
+- For `ssz_snappy` this is: `32 + n + n // 6`.
+  This is considered the [worst-case compression result](https://github.com/google/snappy/blob/537f4ad6240e586970fe554614542e9717df7902/snappy.cc#L98) by Snappy.
+
+A reader SHOULD consider the following cases as invalid input:
+- Any remaining bytes, after having read the `n` SSZ bytes. An EOF is expected if more bytes are read than required.
+- An early EOF, before fully reading the declared length-prefix worth of SSZ bytes.
+
+In case of an invalid input (header or payload), a reader MUST:
+- From requests: send back an error message, response code `InvalidRequest`. The request itself is ignored.
+- From responses: ignore the response, the response MUST be considered bad server behavior.
+
+All messages that contain only a single field MUST be encoded directly as the type of that field and MUST NOT be encoded as an SSZ container.
+
+Responses that are SSZ-lists (for example `List[SignedBeaconBlock, ...]`) send their
+constituents individually as `response_chunk`s. For example, the
+`List[SignedBeaconBlock, ...]` response type sends zero or more `response_chunk`s.
+Each _successful_ `response_chunk` contains a single `SignedBeaconBlock` payload.
+
+### Messages
+
+#### Status
+
+**Protocol ID:** `/account_abstraction/erc4337/req/status/1/`
+
+Request, Response Content:
+```
+(
+  supported_mempools - ?
+  ???
+)
+```
+The fields are, as seen by the client at the time of sending the message:
+
+- supported_mempools - List of supported mempools.
+- 
+- 
+- 
+- 
+
+The dialing client MUST send a `Status` request upon connection.
+
+The request/response MUST be encoded as an SSZ-container.
+
+The response MUST consist of a single `response_chunk`.
+
+Clients SHOULD immediately disconnect from one another following the handshake above under the following conditions:
+
+1. If the supported_mempools does not match with the client's own list of supported mempools.
+2. 
+
+#### Goodbye
+
+**Protocol ID:** `/account_abstraction/erc4337/req/goodbye/1/`
+
+Request, Response Content:
+```
+(
+  uint64
+)
+```
+Client MAY send goodbye messages upon disconnection. The reason field MAY be one of the following values:
+
+- 1: Client shut down.
+- 2: Irrelevant network.
+- 3: Fault/error.
+
+Clients MAY use reason codes above `128` to indicate alternative, erroneous request-specific responses.
+
+The range `[4, 127]` is RESERVED for future usage.
+
+The request/response MUST be encoded as a single SSZ-field.
+
+The response MUST consist of a single `response_chunk`.
+
+#### Ping
+
+**Protocol ID:** `/account_abstraction/erc4337/req/ping/1/`
+
+Request Content:
+
+```
+(
+  uint64
+)
+```
+
+Response Content:
+
+```
+(
+  uint64
+)
+```
+
+Sent intermittently, the `Ping` protocol checks liveness of connected peers.
+Peers request and respond with their local metadata sequence number (`MetaData.seq_number`).
+
+If the peer does not respond to the `Ping` request, the client MAY disconnect from the peer.
+
+A client can then determine if their local record of a peer's MetaData is up to date
+and MAY request an updated version via the `MetaData` RPC method if not.
+
+The request MUST be encoded as an SSZ-field.
+
+The response MUST consist of a single `response_chunk`.
+
+#### GetMetaData
+
+**Protocol ID:** `/account_abstraction/erc4337/req/metadata/1/`
+
+No Request Content.
+
+Response Content:
+
+```
+(
+  MetaData
+)
+```
+
+Requests the MetaData of a peer.
+The request opens and negotiates the stream without sending any request content.
+Once established the receiving peer responds with
+it's local most up-to-date MetaData.
+
+The response MUST be encoded as an SSZ-container.
+
+The response MUST consist of a single `response_chunk`.
+
+##### `PooledUserOpsByHashes`
+
+**Protocol ID:** `/account_abstraction/erc4337/req/pooled_user_ops_by_hashes/1/`
+
+Request Content:
+
+```
+(
+  hashes: List[bytes32, MAX_OPS_PER_REQUEST]
+)
+```
+
+Response Content: 
+```
+(
+  List[UserOp, MAX_OPS_PER_REQUEST]
+)
+```
+
+The `pooled_user_ops_by_hashes` requests UserOps from the recipients UserOp mempool for a given EntryPoint contract address. The recommended soft limit for PooledUserOpsByHashes requests is MAX_OPS_PER_REQUEST hashes. The recipient may enforce an arbitrary limit on the response (size or serving time), which must not be considered a protocol violation.
+ 
 
 
 ## Container Specifications
