@@ -27,8 +27,8 @@ It consists of four main sections:
     - [Topics and messages](#topics-and-messages)
       - [Global topics](#global-topics)
         - [`user_ops_with_entry_point`](#user_ops_with_entry_point)
-        - [`pooled_user_ops_hashes`](#pooled_user_ops_hashes)
     - [Encodings](#encodings)
+    - [Mempool ID](#mempool-id)
   - [The Req/Resp domain](#the-reqresp-domain)
     - [Protocol identification](#protocol-identification)
     - [Req/Resp interaction](#reqresp-interaction)
@@ -128,10 +128,12 @@ including the [gossipsub v1.1](https://github.com/libp2p/specs/blob/master/pubsu
 ### Topics and messages
 
 Topics are plain UTF-8 strings and are encoded on the wire as determined by protobuf (gossipsub messages are enveloped in protobuf messages).
-Topic strings have form: `/erc4337/UserOpsWithEntryPoint/Name/Encoding`.
+Topic strings have form: `/account_abstraction/mempool_id/Name/Encoding`.
 This defines both the type of data being sent on the topic and how the data field of the message is encoded.
 
-- `UserOpsWithEntryPoint` - the lowercase hex-encoded (no "0x" prefix) bytes of `mempool_id` + `user_operation` 
+- `mempool_id` - the lower case IPFS hash of the file that contains the description of the metadata of the mempool. Please see [mempool-id](#mempool-id) section for further details.
+- `Name` - see table below
+- `Encoding` - the encoding strategy describes a specific representation of bytes that will be transmitted over the wire. See the [Encodings](#Encodings) section for further details.
 
 Each gossipsub [message](https://github.com/libp2p/go-libp2p-pubsub/blob/master/pb/rpc.proto#L17-L24) has a maximum size of `GOSSIP_MAX_SIZE`.
 Bundlers MUST reject (fail validation) messages that are over this size limit.
@@ -154,7 +156,6 @@ The payload is carried in the `data` field of a gossipsub message, and varies de
 | Name                           | Message Type                    |
 |--------------------------------|---------------------------------|
 | `user_ops_with_entry_point`    | `UserOperationsWithEntryPoint`  |
-| `pooled_user_ops_hashes`       | `PooledUserOperationsHashes`    |
 
 Bundlers MUST reject (fail validation) messages containing an incorrect type, or invalid payload.
 
@@ -165,8 +166,7 @@ For any optional queueing, Bundlers SHOULD maintain maximum queue sizes to avoid
 
 #### Global topics
 
-There are two primary global topics used to propagate user operations (`UserOperationWithEntryPoint`)
-and aggregate user operation hashes (`NewPooledUserOperationsHashes`) to all nodes on the network.
+The primary global topics used to propagate user operations to all nodes on the network is `UserOperationWithEntryPoint`.
 
 ##### `user_ops_with_entry_point`
 
@@ -177,14 +177,28 @@ The following validations MUST pass before forwarding the `user_ops_with_entry_p
 - TBD
 - TBD
 
-##### `pooled_user_ops_hashes`
+### Encodings
 
-The `pooled_user_ops_hashes` topic is used solely for propagating to all the connected nodes on the networks. One or more UserOps that have appeared in the network and which have not yet been included in a block are propagated to a fraction of the nodes connected to the network.
+Topics are post-fixed with an encoding. Encodings define how the payload of a gossipsub message is encoded.
 
-The following validations MUST pass before forwarding the `pooled_user_ops_hashes` on the network
-- TBD
-- TBD
-- TBD
+ssz_snappy - All objects are SSZ-encoded and then compressed with Snappy block compression. Example: The user_ops_with_entry_point topic string of the canonical mempool is /account_abstraction/<mempool_id>/user_ops_with_entry_point/ssz_snappy, the <mempool_id> is <> and the data field of a gossipsub message is an UserOpsWithEntryPoiint that has been SSZ-encoded and then compressed with Snappy.
+Snappy has two formats: "block" and "frames" (streaming). Gossip messages remain relatively small (100s of bytes to 100s of kilobytes) so basic snappy block compression is used to avoid the additional overhead associated with snappy frames.
+
+Implementations MUST use a single encoding for gossip. Changing an encoding will require coordination between participating implementations.
+
+### Mempool ID
+
+The metadata associated to each mempool that a Bundler may support is documented and stored in IPFS (a copy of this is also suggested to be submitted to `eth-infinitism` Github repo). This IPFS hash of this file is called `mempool-id` and this is used as the topic for subscription in the Bundlers. The proposed structure of the canonical mempool metadata is as follows
+
+```json
+{
+  chainId: 1,
+  entryPointContract: "0x0", //TBD with EntryPointConctractAddress
+  description: "This is the default/canonical mempool, which will be used by most bundlers on Ethereum Mainnnet",
+  minimumStake: 0.0,
+}
+```
+The `mempool-id` of the canonical mempool is `<>`.
 
 ## The Req/Resp domain
 
