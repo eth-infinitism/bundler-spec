@@ -173,9 +173,9 @@ The primary global topics used to propagate user operations to all nodes on the 
 The `user_ops_with_entry_point` topic is the concatenation of EntryPoint address and UserOperation message serialized using SSZ
 
 The following validations MUST pass before forwarding the `user_ops_with_entry_point` on the network
-- TBD
-- TBD
-- TBD
+- [IGNORE] `verified_at_block_hash` is too far in the past.
+- [REJECT] If any of the sanity checks specified in the [EIP](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-4337.md#client-behavior-upon-receiving-a-useroperation) fails.
+- [REJECT] If the simulated user operation fails.
 
 ### Encodings
 
@@ -188,17 +188,17 @@ Implementations MUST use a single encoding for gossip. Changing an encoding will
 
 ### Mempool ID
 
-The metadata associated to each mempool that a Bundler may support is documented and stored in IPFS (a copy of this is also suggested to be submitted to `eth-infinitism` Github repo). This IPFS hash of this file is called `mempool-id` and this is used as the topic for subscription in the Bundlers. The proposed structure of the canonical mempool metadata is as follows
+The metadata associated to each mempool that a bundler supports is documented and stored in IPFS (a copy of this is also suggested to be submitted to `eth-infinitism` Github repo). This IPFS hash of the file is called `mempool-id` and this is used as the topic for subscription in the bundlers. The proposed structure of the mempool metadata is as follows
 
 ```json
 {
-  chainId: 1,
-  entryPointContract: "0x0", //TBD with EntryPointConctractAddress
-  description: "This is the default/canonical mempool, which will be used by most bundlers on Ethereum Mainnnet",
-  minimumStake: 0.0,
+  "chainId": 1,
+  "entryPointContract": "0x0", //TBD with EntryPointConctractAddress
+  "description": "This is the default/canonical mempool, which will be used by most bundlers on Ethereum Mainnnet",
+  "minimumStake": 0.0,
 }
 ```
-The `mempool-id` of the canonical mempool is `<>`.
+The `mempool-id` of the canonical mempool is `TBD`.
 
 ## The Req/Resp domain
 
@@ -243,7 +243,7 @@ Because req/resp streams are single-use and stream closures implicitly delimit t
 however, certain encodings like SSZ do, for added security.
 
 A `response` is formed by zero or more `response_chunk`s.
-Responses that consist of a single SSZ-list (such as `GetPooledUserOps` and `PooledUserOperations`) send each list item as a `response_chunk`.
+Responses that consist of a single SSZ-list send each list item as a `response_chunk`.
 All other response types (non-Lists) send a single `response_chunk`.
 
 For both `request`s and `response`s, the `encoding-dependent-header` MUST be valid,
@@ -332,14 +332,14 @@ Clients MUST treat as valid any byte sequences.
 The token of the negotiated protocol ID specifies the type of encoding to be used for the req/resp interaction.
 Only one value is possible at this time:
 
--  `ssz_snappy`: The contents are first [SSZ-encoded](../../ssz/simple-serialize.md)
+-  `ssz_snappy`: The contents are first [SSZ-encoded](https://github.com/ethereum/consensus-specs/blob/dev/ssz/simple-serialize.md)
   and then compressed with [Snappy](https://github.com/google/snappy) frames compression.
   For objects containing a single field, only the field is SSZ-encoded not a container with a single field.
   This encoding type MUST be supported by all clients.
 
 #### SSZ-snappy encoding strategy
 
-The [SimpleSerialize (SSZ) specification](../../ssz/simple-serialize.md) outlines how objects are SSZ-encoded.
+The [SimpleSerialize (SSZ) specification](https://github.com/ethereum/consensus-specs/blob/dev/ssz/simple-serialize.md) outlines how objects are SSZ-encoded.
 
 To achieve snappy encoding on top of SSZ, we feed the serialized form of the object to the Snappy compressor on encoding.
 The inverse happens on decoding.
@@ -393,17 +393,13 @@ Each _successful_ `response_chunk` contains a single `UserOperationsWithEntryPoi
 Request, Response Content:
 ```
 (
-  supported_mempools - ?
-  ???
+  List[bytes32,MAX_OPS_PER_REQUEST]
 )
 ```
 The fields are, as seen by the client at the time of sending the message:
 
 - supported_mempools - List of supported mempools.
-- 
-- 
-- 
-- 
+
 
 The dialing client MUST send a `Status` request upon connection.
 
@@ -414,7 +410,6 @@ The response MUST consist of a single `response_chunk`.
 Clients SHOULD immediately disconnect from one another following the handshake above under the following conditions:
 
 1. If the supported_mempools does not match with the client's own list of supported mempools.
-2. 
 
 #### Goodbye
 
@@ -574,15 +569,15 @@ Specifically, the value of the `account_abstraction` key MUST be the following S
 
 ```
 (
-    ???
+    TBD
 )
 ```
 
 where the fields of `ENRAccountAbstraction` are defined as
 
-* 
-* 
-* 
+* TBD
+* TBD
+* TBD
 
 
 Clients SHOULD connect to peers with ``, ``, and `` that match local values.
