@@ -128,6 +128,7 @@ including the [gossipsub v1.1](https://github.com/libp2p/specs/blob/master/pubsu
 ### Topics and messages
 
 Topics are plain UTF-8 strings and are encoded on the wire as determined by protobuf (gossipsub messages are enveloped in protobuf messages).
+
 Topic strings have form: `/account_abstraction/mempool_id/Name/Encoding`.
 This defines both the type of data being sent on the topic and how the data field of the message is encoded.
 
@@ -200,6 +201,7 @@ The metadata associated to each mempool that a bundler supports is documented an
 ```
 The `mempool-id` of the canonical mempool is `TBD`.
 
+
 ## The Req/Resp domain
 
 ### Protocol identification
@@ -243,7 +245,9 @@ Because req/resp streams are single-use and stream closures implicitly delimit t
 however, certain encodings like SSZ do, for added security.
 
 A `response` is formed by zero or more `response_chunk`s.
+
 Responses that consist of a single SSZ-list send each list item as a `response_chunk`.
+
 All other response types (non-Lists) send a single `response_chunk`.
 
 For both `request`s and `response`s, the `encoding-dependent-header` MUST be valid,
@@ -333,6 +337,7 @@ The token of the negotiated protocol ID specifies the type of encoding to be use
 Only one value is possible at this time:
 
 -  `ssz_snappy`: The contents are first [SSZ-encoded](https://github.com/ethereum/consensus-specs/blob/dev/ssz/simple-serialize.md)
+
   and then compressed with [Snappy](https://github.com/google/snappy) frames compression.
   For objects containing a single field, only the field is SSZ-encoded not a container with a single field.
   This encoding type MUST be supported by all clients.
@@ -399,7 +404,6 @@ Request, Response Content:
 The fields are, as seen by the client at the time of sending the message:
 
 - supported_mempools - List of supported mempools.
-
 
 The dialing client MUST send a `Status` request upon connection.
 
