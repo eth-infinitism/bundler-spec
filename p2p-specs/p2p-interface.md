@@ -535,7 +535,7 @@ This integration enables the libp2p stack to subsequently form connections and s
 
 ### ENR structure
 
-The Ethereum Node Record (ENR) for a bundler client MUST contain the following entries
+The bundlers will use the same type of Ethereum Node Record (ENR) that Ethereum consensus clients use. Essentially, they MUST contain the following entries
 (exclusive of the sequence number and signature, which MUST be present in an ENR):
 
 -  The compressed secp256k1 publickey, 33 bytes (`secp256k1` field).
@@ -560,35 +560,6 @@ to more easily discover peers participating in particular mempool id gossip subn
 If a node's `MetaData.mempools` has any non-zero bit, the ENR MUST include the `mempools` entry with the same value as `MetaData.mempools`.
 
 If a node's `MetaData.mempools` is composed of all zeros, the ENR MAY optionally include the `mempools` entry or leave it out entirely.
-
-#### `account_abstraction` field
-
-ENRs MUST carry a generic `account_abstraction` key with an 16-byte value of the node's current state(??) to ensure connections are made with peers on the intended Ethereum network.
-
-| Key                         | Value                              |
-|:----------------------------|:-----------------------------------|
-| `account_abstraction`       | SSZ `ENRAccountAbstraction`        |
-
-Specifically, the value of the `account_abstraction` key MUST be the following SSZ encoded object (`ENRAccountAbstraction`)
-
-```
-(
-    TBD
-)
-```
-
-where the fields of `ENRAccountAbstraction` are defined as
-
-* TBD
-* TBD
-* TBD
-
-
-Clients SHOULD connect to peers with ``, ``, and `` that match local values.
-
-Clients MAY connect to peers with the same `` but a different ``/``.
-Unless `ENRAccountAbstraction` is manually updated to matching prior to the earlier `` of the two clients,
-these connecting clients will be unable to successfully interact starting at the earlier ``.
 
 ## Container Specifications
 
