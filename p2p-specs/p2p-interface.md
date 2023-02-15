@@ -176,13 +176,13 @@ The `user_ops_with_entry_point` topic is the concatenation of EntryPoint address
 The following validations MUST pass before forwarding the `user_ops_with_entry_point` on the network
 - [IGNORE] `verified_at_block_hash` is too far in the past.
 - [REJECT] If any of the sanity checks specified in the [EIP](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-4337.md#client-behavior-upon-receiving-a-useroperation) fails.
-- [REJECT] If the simulated user operation fails.
+- [REJECT] If the simulated validation of the user operation fails.
 
 ### Encodings
 
 Topics are post-fixed with an encoding. Encodings define how the payload of a gossipsub message is encoded.
 
-ssz_snappy - All objects are SSZ-encoded and then compressed with Snappy block compression. Example: The user_ops_with_entry_point topic string of the canonical mempool is /account_abstraction/<mempool_id>/user_ops_with_entry_point/ssz_snappy, the <mempool_id> is <> and the data field of a gossipsub message is an UserOpsWithEntryPoiint that has been SSZ-encoded and then compressed with Snappy.
+ssz_snappy - All objects are SSZ-encoded and then compressed with Snappy block compression. Example: The user_ops_with_entry_point topic string of the canonical mempool is /account_abstraction/<mempool_id>/user_ops_with_entry_point/ssz_snappy, the <mempool_id> is `TBD` (the IPFS hash of the mempool JSON file) and the data field of a gossipsub message is an UserOpsWithEntryPoiint that has been SSZ-encoded and then compressed with Snappy.
 Snappy has two formats: "block" and "frames" (streaming). Gossip messages remain relatively small (100s of bytes to 100s of kilobytes) so basic snappy block compression is used to avoid the additional overhead associated with snappy frames.
 
 Implementations MUST use a single encoding for gossip. Changing an encoding will require coordination between participating implementations.
@@ -199,7 +199,7 @@ The metadata associated to each mempool that a bundler supports is documented an
   "minimumStake": 0.0,
 }
 ```
-The `mempool-id` of the canonical mempool is `TBD`.
+The `mempool-id` of the canonical mempool is `TBD` (IPFS hash of the JSON file).
 
 
 ## The Req/Resp domain
