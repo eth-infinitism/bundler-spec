@@ -182,7 +182,7 @@ The following validations MUST pass before forwarding the `user_ops_with_entry_p
 
 Topics are post-fixed with an encoding. Encodings define how the payload of a gossipsub message is encoded.
 
-ssz_snappy - All objects are SSZ-encoded and then compressed with Snappy block compression. Example: The user_ops_with_entry_point topic string of the canonical mempool is /account_abstraction/<mempool_id>/user_ops_with_entry_point/ssz_snappy, the <mempool_id> is `TBD` (the IPFS hash of the mempool JSON file) and the data field of a gossipsub message is an UserOpsWithEntryPoiint that has been SSZ-encoded and then compressed with Snappy.
+ssz_snappy - All objects are SSZ-encoded and then compressed with Snappy block compression. Example: The user_ops_with_entry_point topic string of the canonical mempool is /account_abstraction/<mempool_id>/user_ops_with_entry_point/ssz_snappy, the <mempool_id> is `TBD` (the IPFS hash of the mempool JSON file) and the data field of a gossipsub message is a UserOpsWithEntryPoint that has been SSZ-encoded and then compressed with Snappy.
 Snappy has two formats: "block" and "frames" (streaming). Gossip messages remain relatively small (100s of bytes to 100s of kilobytes) so basic snappy block compression is used to avoid the additional overhead associated with snappy frames.
 
 Implementations MUST use a single encoding for gossip. Changing an encoding will require coordination between participating implementations.
@@ -413,7 +413,7 @@ The response MUST consist of a single `response_chunk`.
 
 Clients SHOULD immediately disconnect from one another following the handshake above under the following conditions:
 
-1. If the supported_mempools does not match with the client's own list of supported mempools.
+1. If the supported_mempools and client's own list of supported mempools are disjoint.
 
 #### Goodbye
 
