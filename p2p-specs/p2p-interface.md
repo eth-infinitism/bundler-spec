@@ -171,7 +171,7 @@ The primary global topics used to propagate user operations to all nodes on the 
 
 ##### `user_ops_with_entry_point`
 
-The `user_ops_with_entry_point` topic is the concatenation of EntryPoint address and UserOperation message serialized using SSZ
+The `user_ops_with_entry_point` topic is the concatenation of EntryPoint address and a list of UserOperations corresponding to the entry point address. This message is serialized using SSZ
 
 The following validations MUST pass before forwarding the `user_ops_with_entry_point` on the network
 - [IGNORE] `verified_at_block_hash` is too far in the past.
