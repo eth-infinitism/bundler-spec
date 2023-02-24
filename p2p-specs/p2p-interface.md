@@ -41,6 +41,8 @@ It consists of four main sections:
       - [Goodbye](#goodbye)
       - [Ping](#ping)
       - [GetMetaData](#getmetadata)
+      - [PooledUserOpHashes] (#pooleduserophashes)
+      - [PooledUserOpsByHashes] (#pooleduseropsbyhashes)
 - [The discovery domain: discv5](#the-discovery-domain-discv5)
     - [Integration into libp2p stacks](#integration-into-libp2p-stacks)
     - [ENR structure](#enr-structure)
@@ -167,7 +169,7 @@ For any optional queueing, Bundlers SHOULD maintain maximum queue sizes to avoid
 
 #### Global topics
 
-The primary global topics used to propagate user operations to all nodes on the network is `UserOperationWithEntryPoint`.
+The primary global topics used to propagate user operations to all nodes on the network is `UserOperationsWithEntryPoint`.
 
 ##### `user_ops_with_entry_point`
 
@@ -181,6 +183,7 @@ The following validations MUST pass before forwarding the `user_ops_with_entry_p
 ### Encodings
 
 Topics are post-fixed with an encoding. Encodings define how the payload of a gossipsub message is encoded.
+
 
 ssz_snappy - All objects are SSZ-encoded and then compressed with Snappy block compression. Example: The user_ops_with_entry_point topic string of the canonical mempool is /account_abstraction/<mempool_id>/user_ops_with_entry_point/ssz_snappy, the <mempool_id> is `TBD` (the IPFS hash of the mempool JSON file) and the data field of a gossipsub message is a UserOpsWithEntryPoint that has been SSZ-encoded and then compressed with Snappy.
 Snappy has two formats: "block" and "frames" (streaming). Gossip messages remain relatively small (100s of bytes to 100s of kilobytes) so basic snappy block compression is used to avoid the additional overhead associated with snappy frames.
@@ -494,7 +497,29 @@ The response MUST be encoded as an SSZ-container.
 
 The response MUST consist of a single `response_chunk`.
 
-##### `PooledUserOpsByHashes`
+#### PooledUserOpHashes
+
+**Protocol ID:** `/account_abstraction/erc4337/req/pooled_user_op_hashes/1/`
+
+Request Content:
+
+```
+(
+  mempool: Bytes32
+)
+```
+
+Response Content: 
+```
+(
+  List[Bytes32, MAX_OPS_PER_REQUEST]
+)
+```
+
+The `pooled_user_op_hashes` requests UserOps from the recipients UserOp mempool for a given mempool_id. The recommended soft limit for PooledUserOpHashes requests is MAX_OPS_PER_REQUEST hashes. The recipient may enforce an arbitrary limit on the response (size or serving time), which must not be considered a protocol violation. This message is requested UserOp mempool of all connected peers as soon as bundler node startups.
+
+
+#### PooledUserOpsByHashes
 
 **Protocol ID:** `/account_abstraction/erc4337/req/pooled_user_ops_by_hashes/1/`
 
@@ -513,7 +538,7 @@ Response Content:
 )
 ```
 
-The `pooled_user_ops_by_hashes` requests UserOps from the recipients UserOp mempool for a given EntryPoint contract address. The recommended soft limit for PooledUserOpsByHashes requests is MAX_OPS_PER_REQUEST hashes. The recipient may enforce an arbitrary limit on the response (size or serving time), which must not be considered a protocol violation.
+The `pooled_user_ops_by_hashes` requests UserOps from the recipients UserOp mempool for a given EntryPoint contract address. The recommended soft limit for PooledUserOpsByHashes requests is MAX_OPS_PER_REQUEST hashes. The recipient may enforce an arbitrary limit on the response (size or serving time), which must not be considered a protocol violation. 
  
 ## The discovery domain: discv5
 
@@ -555,11 +580,11 @@ to more easily discover peers participating in particular mempool id gossip subn
 
 | Key          | Value                                            |
 |:-------------|:-------------------------------------------------|
-| `mempools`    | SSZ `Bitvector[MEMPOOL_ID_SUBNET_COUNT]`        |
+| `mempoolnets`    | SSZ `Bitvector[MEMPOOL_ID_SUBNET_COUNT]`        |
 
-If a node's `MetaData.mempools` has any non-zero bit, the ENR MUST include the `mempools` entry with the same value as `MetaData.mempools`.
+If a node's `MetaData.mempoolnets` has any non-zero bit, the ENR MUST include the `mempoolnets` entry with the same value as `MetaData.mempoolnets`.
 
-If a node's `MetaData.mempools` is composed of all zeros, the ENR MAY optionally include the `mempools` entry or leave it out entirely.
+If a node's `MetaData.mempoolnets` is composed of all zeros, the ENR MAY optionally include the `mempoolnets` entry or leave it out entirely.
 
 ## Container Specifications
 
@@ -582,7 +607,7 @@ class UserOp(Container):
     signature: bytes
 ```
 
-#### `UserOperationWithEntryPoint`
+#### `UserOperationsWithEntryPoint`
 
 ```python
 class UserOperationsWithEntryPoint(Container):
