@@ -187,7 +187,7 @@ The following validations MUST pass before forwarding the `user_ops_with_entry_p
 Topics are post-fixed with an encoding. Encodings define how the payload of a gossipsub message is encoded.
 
 
-ssz_snappy - All objects are SSZ-encoded and then compressed with Snappy block compression. Example: The user_ops_with_entry_point topic string of the canonical mempool is /account_abstraction/<mempool_id>/user_ops_with_entry_point/ssz_snappy, the <mempool_id> is `TBD` (the IPFS hash of the mempool JSON file) and the data field of a gossipsub message is a UserOpsWithEntryPoint that has been SSZ-encoded and then compressed with Snappy.
+ssz_snappy - All objects are SSZ-encoded and then compressed with Snappy block compression. Example: The user_ops_with_entry_point topic string of the canonical mempool is /account_abstraction/<mempool_id>/user_ops_with_entry_point/ssz_snappy, the <mempool_id> is `TBD` (the IPFS hash of the mempool yaml/JSON file) and the data field of a gossipsub message is a UserOpsWithEntryPoint that has been SSZ-encoded and then compressed with Snappy.
 Snappy has two formats: "block" and "frames" (streaming). Gossip messages remain relatively small (100s of bytes to 100s of kilobytes) so basic snappy block compression is used to avoid the additional overhead associated with snappy frames.
 
 Implementations MUST use a single encoding for gossip. Changing an encoding will require coordination between participating implementations.
@@ -196,15 +196,15 @@ Implementations MUST use a single encoding for gossip. Changing an encoding will
 
 The metadata associated to each mempool that a bundler supports is documented and stored in IPFS (a copy of this is also suggested to be submitted to `eth-infinitism` Github repo). This IPFS hash of the file is called `mempool-id` and this is used as the topic for subscription in the bundlers. The proposed structure of the mempool metadata is as follows
 
-```json
-{
-  "chainId": 1,
-  "entryPointContract": "0x0", //TBD with EntryPointConctractAddress
-  "description": "This is the default/canonical mempool, which will be used by most bundlers on Ethereum Mainnnet",
-  "minimumStake": 0.0,
-}
+```yaml
+chainId: '1'
+entryPointContract: '0x0'
+description: >-
+  This is the default/canonical mempool, which will be used by most bundlers on
+  Ethereum Mainnnet
+minimumStake: '0.0'
 ```
-The `mempool-id` of the canonical mempool is `TBD` (IPFS hash of the JSON file).
+The `mempool-id` of the canonical mempool is `TBD` (IPFS hash of the yaml/JSON file).
 
 
 ## The Req/Resp domain
