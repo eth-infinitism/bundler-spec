@@ -198,7 +198,7 @@ The metadata associated to each mempool that a bundler supports is documented an
 
 ```yaml
 chainId: '1'
-entryPointContract: '0x0'
+entryPointContract: '0x0576a174d229e3cfa37253523e645a78a0c91b57'
 description: >-
   This is the default/canonical mempool, which will be used by most bundlers on
   Ethereum Mainnnet
