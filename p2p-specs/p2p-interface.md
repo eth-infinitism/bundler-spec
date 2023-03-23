@@ -102,7 +102,7 @@ This section outlines constants that are used in this spec.
 | Name | Value | Description |
 |---|---|---|
 | `GOSSIP_MAX_SIZE`    | `2**20` (= 1048576, 1 MiB) | The maximum allowed size of uncompressed gossip messages. |
-| `MAX_OPS_PER_REQUEST`| `256` | Maximum number of UserOps in a single request. |
+| `MAX_OPS_PER_REQUEST`| `4096` | Maximum number of UserOps in a single request. |
 | `RESP_TIMEOUT`	     | `10s` | The maximum time for complete response transfer. |
 | `TTFB_TIMEOUT`       | `5s` | The maximum time to wait for first byte of request response (time-to-first-byte). |
 
@@ -501,29 +501,31 @@ The response MUST consist of a single `response_chunk`.
 
 #### PooledUserOpHashes
 
-**Protocol ID:** `/account_abstraction/erc4337/req/pooled_user_ops_hash/1/`
+**Protocol ID:** `/account_abstraction/erc4337/req/pooled_user_ops_hashes/1/`
 
 Request Content:
 
 ```
 (
   mempool: Bytes32
+  offset: uint64
 )
 ```
 
 Response Content: 
 ```
 (
-  List[Bytes32, MAX_OPS_PER_REQUEST]
+  more_flag: uint64
+  hashes: List[Bytes32, MAX_OPS_PER_REQUEST]
 )
 ```
 
-The `pooled_user_ops_by_hash` requests UserOps from the recipients UserOp mempool for a given mempool_id. The recommended soft limit for PooledUserOpHashes requests is MAX_OPS_PER_REQUEST hashes. The recipient may enforce an arbitrary limit on the response (size or serving time), which must not be considered a protocol violation. This message is requested UserOp mempool of all connected peers as soon as bundler node startups.
+The `pooled_user_ops_by_hash` requests UserOp mempool of all connected peers as soon as bundler node starts up. The node requests UserOps from the recipients mempool for a given `mempool_id` and `offset`. The `offset` is set to `0` for the initial call. The recommended soft limit for PooledUserOpHashes requests is MAX_OPS_PER_REQUEST hashes. The recipient may enforce an arbitrary limit on the response (size or serving time), which must not be considered a protocol violation. The `more_flag` is set to 0, if the connected peer's reported hashes is <= to MAX_OPS_PER_REQUEST. otherwise the `more_flag` is set to a value > 0. The value of `more_flag` can be used to determine the number of subsequent req/resp a node has to perform to refetch the missing hashes from the connected peer.
 
 
 #### PooledUserOpsByHash
 
-**Protocol ID:** `/account_abstraction/erc4337/req/pooled_user_ops_by_hashes/1/`
+**Protocol ID:** `/account_abstraction/erc4337/req/pooled_user_ops_by_hash/1/`
 
 Request Content:
 
@@ -540,7 +542,7 @@ Response Content:
 )
 ```
 
-The `pooled_user_ops_by_hashes` requests UserOps from the recipients UserOp mempool for a given EntryPoint contract address. The recommended soft limit for PooledUserOpsByHash requests is MAX_OPS_PER_REQUEST hashes. The recipient may enforce an arbitrary limit on the response (size or serving time), which must not be considered a protocol violation. 
+The `pooled_user_ops_by_hash` requests UserOps from the recipients UserOp mempool for a given EntryPoint contract address. The recommended soft limit for PooledUserOpsByHash requests is MAX_OPS_PER_REQUEST hashes. The recipient may enforce an arbitrary limit on the response (size or serving time), which must not be considered a protocol violation. 
  
 ## The discovery domain: discv5
 
@@ -624,5 +626,6 @@ class UserOperationsWithEntryPoint(Container):
 ```python
 class PooledUserOps(Container):
     mempool_id: bytes32
+    more_flag: uint64
     user_operations: List[UserOp, MAX_OPS_PER_REQUEST]
 ```
