@@ -43,7 +43,7 @@ It consists of four main sections:
       - [Ping](#ping)
       - [GetMetaData](#getmetadata)
       - [PooledUserOpHashes](#pooleduserophashes)
-      - [PooledUserOpsByHashes](#pooleduseropsbyhashes)
+      - [PooledUserOpsByHash](#pooleduseropsbyhash)
   * [The discovery domain: discv5](#the-discovery-domain--discv5)
     + [Integration into libp2p stacks](#integration-into-libp2p-stacks)
     + [ENR structure](#enr-structure)
@@ -501,7 +501,7 @@ The response MUST consist of a single `response_chunk`.
 
 #### PooledUserOpHashes
 
-**Protocol ID:** `/account_abstraction/erc4337/req/pooled_user_op_hashes/1/`
+**Protocol ID:** `/account_abstraction/erc4337/req/pooled_user_ops_hash/1/`
 
 Request Content:
 
@@ -518,10 +518,10 @@ Response Content:
 )
 ```
 
-The `pooled_user_op_hashes` requests UserOps from the recipients UserOp mempool for a given mempool_id. The recommended soft limit for PooledUserOpHashes requests is MAX_OPS_PER_REQUEST hashes. The recipient may enforce an arbitrary limit on the response (size or serving time), which must not be considered a protocol violation. This message is requested UserOp mempool of all connected peers as soon as bundler node startups.
+The `pooled_user_ops_by_hash` requests UserOps from the recipients UserOp mempool for a given mempool_id. The recommended soft limit for PooledUserOpHashes requests is MAX_OPS_PER_REQUEST hashes. The recipient may enforce an arbitrary limit on the response (size or serving time), which must not be considered a protocol violation. This message is requested UserOp mempool of all connected peers as soon as bundler node startups.
 
 
-#### PooledUserOpsByHashes
+#### PooledUserOpsByHash
 
 **Protocol ID:** `/account_abstraction/erc4337/req/pooled_user_ops_by_hashes/1/`
 
@@ -540,7 +540,7 @@ Response Content:
 )
 ```
 
-The `pooled_user_ops_by_hashes` requests UserOps from the recipients UserOp mempool for a given EntryPoint contract address. The recommended soft limit for PooledUserOpsByHashes requests is MAX_OPS_PER_REQUEST hashes. The recipient may enforce an arbitrary limit on the response (size or serving time), which must not be considered a protocol violation. 
+The `pooled_user_ops_by_hashes` requests UserOps from the recipients UserOp mempool for a given EntryPoint contract address. The recommended soft limit for PooledUserOpsByHash requests is MAX_OPS_PER_REQUEST hashes. The recipient may enforce an arbitrary limit on the response (size or serving time), which must not be considered a protocol violation. 
  
 ## The discovery domain: discv5
 
