@@ -17,37 +17,41 @@ It consists of four main sections:
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 - [Network fundamentals](#network-fundamentals)
-  - [Transport](#transport)
-  - [Encryption and identification](#encryption-and-identification)
-  - [Protocol Negotiation](#protocol-negotiation)
-- [Bundler interaction domains](#bundler-interaction-domains)
-  - [Configuration](#configuration)
-  - [MetaData](#metadata)
-  - [The gossip domain: gossipsub](#the-gossip-domain-gossipsub)
-    - [Topics and messages](#topics-and-messages)
+  * [Transport](#transport)
+  * [Encryption and identification](#encryption-and-identification)
+  * [Protocol Negotiation](#protocol-negotiation)
+  * [Multiplexing](#multiplexing)
+- [Bundler network interaction domains](#bundler-network-interaction-domains)
+  * [Configuration](#configuration)
+  * [MetaData](#metadata)
+  * [The gossip domain: gossipsub](#the-gossip-domain--gossipsub)
+    + [Topics and messages](#topics-and-messages)
       - [Global topics](#global-topics)
-        - [`user_ops_with_entry_point`](#user_ops_with_entry_point)
-    - [Encodings](#encodings)
-    - [Mempool ID](#mempool-id)
-  - [The Req/Resp domain](#the-reqresp-domain)
-    - [Protocol identification](#protocol-identification)
-    - [Req/Resp interaction](#reqresp-interaction)
+        * [`user_ops_with_entry_point`](#-user-ops-with-entry-point-)
+    + [Encodings](#encodings)
+    + [Mempool ID](#mempool-id)
+  * [The Req/Resp domain](#the-req-resp-domain)
+    + [Protocol identification](#protocol-identification)
+    + [Req/Resp interaction](#req-resp-interaction)
       - [Requesting side](#requesting-side)
       - [Responding side](#responding-side)
-    - [Encoding strategies](#encoding-strategies)
+    + [Encoding strategies](#encoding-strategies)
       - [SSZ-snappy encoding strategy](#ssz-snappy-encoding-strategy)
-    - [Messages](#messages)
+    + [Messages](#messages)
       - [Status](#status)
       - [Goodbye](#goodbye)
       - [Ping](#ping)
       - [GetMetaData](#getmetadata)
-- [The discovery domain: discv5](#the-discovery-domain-discv5)
-    - [Integration into libp2p stacks](#integration-into-libp2p-stacks)
-    - [ENR structure](#enr-structure)
-      - [Mempool subnet bitfield](#mempool-subnet-bitfield)
-      - [`account_abstraction` field](#account_abstraction-field)
-- [Container Specifications](#container-specs)
-- [Design decision rationale](#design-decision-rationale)
+      - [PooledUserOpHashes](#pooleduserophashes)
+      - [PooledUserOpsByHash](#pooleduseropsbyhash)
+  * [The discovery domain: discv5](#the-discovery-domain--discv5)
+    + [Integration into libp2p stacks](#integration-into-libp2p-stacks)
+    + [ENR structure](#enr-structure)
+      - [Mempools bitfield](#mempools-bitfield)
+  * [Container Specifications](#container-specifications)
+      - [`UserOp`](#-userop-)
+      - [`UserOperationsWithEntryPoint`](#-useroperationswithentrypoint-)
+      - [`PooledUserOps`](#-pooleduserops-)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 <!-- /TOC -->
@@ -98,7 +102,7 @@ This section outlines constants that are used in this spec.
 | Name | Value | Description |
 |---|---|---|
 | `GOSSIP_MAX_SIZE`    | `2**20` (= 1048576, 1 MiB) | The maximum allowed size of uncompressed gossip messages. |
-| `MAX_OPS_PER_REQUEST`| `256` | Maximum number of UserOps in a single request. |
+| `MAX_OPS_PER_REQUEST`| `4096` | Maximum number of UserOps in a single request. |
 | `RESP_TIMEOUT`	     | `10s` | The maximum time for complete response transfer. |
 | `TTFB_TIMEOUT`       | `5s` | The maximum time to wait for first byte of request response (time-to-first-byte). |
 
@@ -167,7 +171,7 @@ For any optional queueing, Bundlers SHOULD maintain maximum queue sizes to avoid
 
 #### Global topics
 
-The primary global topics used to propagate user operations to all nodes on the network is `UserOperationWithEntryPoint`.
+The primary global topics used to propagate user operations to all nodes on the network is `UserOperationsWithEntryPoint`.
 
 ##### `user_ops_with_entry_point`
 
@@ -182,7 +186,8 @@ The following validations MUST pass before forwarding the `user_ops_with_entry_p
 
 Topics are post-fixed with an encoding. Encodings define how the payload of a gossipsub message is encoded.
 
-ssz_snappy - All objects are SSZ-encoded and then compressed with Snappy block compression. Example: The user_ops_with_entry_point topic string of the canonical mempool is /account_abstraction/<mempool_id>/user_ops_with_entry_point/ssz_snappy, the <mempool_id> is `TBD` (the IPFS hash of the mempool JSON file) and the data field of a gossipsub message is a UserOpsWithEntryPoint that has been SSZ-encoded and then compressed with Snappy.
+
+ssz_snappy - All objects are SSZ-encoded and then compressed with Snappy block compression. Example: The user_ops_with_entry_point topic string of the canonical mempool is /account_abstraction/<mempool_id>/user_ops_with_entry_point/ssz_snappy, the <mempool_id> is `TBD` (the IPFS hash of the mempool yaml/JSON file) and the data field of a gossipsub message is a UserOpsWithEntryPoint that has been SSZ-encoded and then compressed with Snappy.
 Snappy has two formats: "block" and "frames" (streaming). Gossip messages remain relatively small (100s of bytes to 100s of kilobytes) so basic snappy block compression is used to avoid the additional overhead associated with snappy frames.
 
 Implementations MUST use a single encoding for gossip. Changing an encoding will require coordination between participating implementations.
@@ -191,15 +196,15 @@ Implementations MUST use a single encoding for gossip. Changing an encoding will
 
 The metadata associated to each mempool that a bundler supports is documented and stored in IPFS (a copy of this is also suggested to be submitted to `eth-infinitism` Github repo). This IPFS hash of the file is called `mempool-id` and this is used as the topic for subscription in the bundlers. The proposed structure of the mempool metadata is as follows
 
-```json
-{
-  "chainId": 1,
-  "entryPointContract": "0x0", //TBD with EntryPointConctractAddress
-  "description": "This is the default/canonical mempool, which will be used by most bundlers on Ethereum Mainnnet",
-  "minimumStake": 0.0,
-}
+```yaml
+chainId: '1'
+entryPointContract: '0x0576a174d229e3cfa37253523e645a78a0c91b57'
+description: >-
+  This is the default/canonical mempool, which will be used by most bundlers on
+  Ethereum Mainnnet
+minimumStake: '0.0'
 ```
-The `mempool-id` of the canonical mempool is `TBD` (IPFS hash of the JSON file).
+The `mempool-id` of the canonical mempool is `TBD` (IPFS hash of the yaml/JSON file).
 
 
 ## The Req/Resp domain
@@ -494,9 +499,33 @@ The response MUST be encoded as an SSZ-container.
 
 The response MUST consist of a single `response_chunk`.
 
-##### `PooledUserOpsByHashes`
+#### PooledUserOpHashes
 
-**Protocol ID:** `/account_abstraction/erc4337/req/pooled_user_ops_by_hashes/1/`
+**Protocol ID:** `/account_abstraction/erc4337/req/pooled_user_ops_hashes/1/`
+
+Request Content:
+
+```
+(
+  mempool: Bytes32
+  offset: uint64
+)
+```
+
+Response Content: 
+```
+(
+  more_flag: uint64
+  hashes: List[Bytes32, MAX_OPS_PER_REQUEST]
+)
+```
+
+The `pooled_user_ops_by_hash` requests UserOp mempool of all connected peers as soon as bundler node starts up. The node requests UserOps from the recipients mempool for a given `mempool_id` and `offset`. The `offset` is set to `0` for the initial call. The recommended soft limit for PooledUserOpHashes requests is MAX_OPS_PER_REQUEST hashes. The recipient may enforce an arbitrary limit on the response (size or serving time), which must not be considered a protocol violation. The `more_flag` is set to 0, if the connected peer's reported hashes is <= to MAX_OPS_PER_REQUEST. otherwise the `more_flag` is set to a value > 0. The value of `more_flag` can be used to determine the number of subsequent req/resp a node has to perform to refetch the missing hashes from the connected peer.
+
+
+#### PooledUserOpsByHash
+
+**Protocol ID:** `/account_abstraction/erc4337/req/pooled_user_ops_by_hash/1/`
 
 Request Content:
 
@@ -513,7 +542,7 @@ Response Content:
 )
 ```
 
-The `pooled_user_ops_by_hashes` requests UserOps from the recipients UserOp mempool for a given EntryPoint contract address. The recommended soft limit for PooledUserOpsByHashes requests is MAX_OPS_PER_REQUEST hashes. The recipient may enforce an arbitrary limit on the response (size or serving time), which must not be considered a protocol violation.
+The `pooled_user_ops_by_hash` requests UserOps from the recipients UserOp mempool for a given EntryPoint contract address. The recommended soft limit for PooledUserOpsByHash requests is MAX_OPS_PER_REQUEST hashes. The recipient may enforce an arbitrary limit on the response (size or serving time), which must not be considered a protocol violation. 
  
 ## The discovery domain: discv5
 
@@ -555,11 +584,11 @@ to more easily discover peers participating in particular mempool id gossip subn
 
 | Key          | Value                                            |
 |:-------------|:-------------------------------------------------|
-| `mempools`    | SSZ `Bitvector[MEMPOOL_ID_SUBNET_COUNT]`        |
+| `mempoolnets`    | SSZ `Bitvector[MEMPOOL_ID_SUBNET_COUNT]`        |
 
-If a node's `MetaData.mempools` has any non-zero bit, the ENR MUST include the `mempools` entry with the same value as `MetaData.mempools`.
+If a node's `MetaData.mempoolnets` has any non-zero bit, the ENR MUST include the `mempoolnets` entry with the same value as `MetaData.mempoolnets`.
 
-If a node's `MetaData.mempools` is composed of all zeros, the ENR MAY optionally include the `mempools` entry or leave it out entirely.
+If a node's `MetaData.mempoolnets` is composed of all zeros, the ENR MAY optionally include the `mempoolnets` entry or leave it out entirely.
 
 ## Container Specifications
 
@@ -582,7 +611,7 @@ class UserOp(Container):
     signature: bytes
 ```
 
-#### `UserOperationWithEntryPoint`
+#### `UserOperationsWithEntryPoint`
 
 ```python
 class UserOperationsWithEntryPoint(Container):
@@ -597,5 +626,6 @@ class UserOperationsWithEntryPoint(Container):
 ```python
 class PooledUserOps(Container):
     mempool_id: bytes32
+    more_flag: uint64
     user_operations: List[UserOp, MAX_OPS_PER_REQUEST]
 ```
