@@ -60,8 +60,3 @@
     name: reputations
     schema:
       $ref: '#/components/schemas/Reputations'
-- name: debug_bundler_supportedMempools
-  summary: Returns the list of mempools supported by the bundler
-  params:
-      schema:
-        $ref: '#/components/schemas/bytes32'
