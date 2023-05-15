@@ -220,7 +220,7 @@ Each message type is segregated into its own libp2p protocol ID, which is a case
 With:
 
 - `ProtocolPrefix` - messages are grouped into families identified by a shared libp2p protocol name prefix.
-  In this case, we use `/account_abstraction/erc4337/req`.
+  In this case, we use `/account_abstraction/req`.
 - `MessageName` - each request is identified by a name consisting of English alphabet, digits and underscores (`_`).
 - `SchemaVersion` - an ordinal version number (e.g. 1, 2, 3…).
   Each schema is versioned to facilitate backward and forward-compatibility when possible.
@@ -582,13 +582,13 @@ Specifications of these parameters can be found in the [ENR Specification](http:
 The ENR `mempools` entry signifies the mempools subnet bitfield with the following form
 to more easily discover peers participating in particular mempool id gossip subnets.
 
-| Key          | Value                                            |
-|:-------------|:-------------------------------------------------|
-| `mempoolnets`    | SSZ `Bitvector[MEMPOOL_ID_SUBNET_COUNT]`        |
+| Key                 | Value                                            |
+|:--------------------|:-------------------------------------------------|
+| `mempool_subnets`   | SSZ `Bitvector[MEMPOOL_ID_SUBNET_COUNT]`        |
 
-If a node's `MetaData.mempoolnets` has any non-zero bit, the ENR MUST include the `mempoolnets` entry with the same value as `MetaData.mempoolnets`.
+If a node's `MetaData.mempool_subnets` has any non-zero bit, the ENR MUST include the `mempool_subnets` entry with the same value as `MetaData.mempool_subnets`.
 
-If a node's `MetaData.mempoolnets` is composed of all zeros, the ENR MAY optionally include the `mempoolnets` entry or leave it out entirely.
+If a node's `MetaData.mempool_subnets` is composed of all zeros, the ENR MAY optionally include the `mempool_subnets` entry or leave it out entirely.
 
 ## Container Specifications
 
