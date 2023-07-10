@@ -368,7 +368,7 @@ GasInfo:
   required:
     - callGasLimit
     - preVerificationGas
-    - verificationGas
+    - verificationGasLimit
   properties:
     callGasLimit:
       title: callGasLimit
@@ -376,6 +376,6 @@ GasInfo:
     preVerificationGas:
       title: preVerificationGas
       $ref: '#/components/schemas/uint'
-    verificationGas:
-      title: verificationGas
+    verificationGasLimit:
+      title: verificationGasLimit
       $ref: '#/components/schemas/uint'
