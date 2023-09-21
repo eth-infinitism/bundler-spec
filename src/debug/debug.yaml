@@ -60,3 +60,14 @@
     name: reputations
     schema:
       $ref: '#/components/schemas/Reputations'
+- name: debug_bundler_setMempool
+  summary: Seeds the local mempool with the passed UserOp array.
+  params:
+    - name: userOperations
+      required: true
+      schema:
+        $ref: '#/components/schemas/UserOperation'
+  result:
+    name: ok
+    schema:
+      $ref: '#/components/schemas/ok'
