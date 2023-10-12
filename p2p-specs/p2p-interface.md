@@ -501,7 +501,7 @@ The response MUST consist of a single `response_chunk`.
 
 #### PooledUserOpHashes
 
-**Protocol ID:** `/account_abstraction/req/pooled_user_ops_hashes/1/`
+**Protocol ID:** `/account_abstraction/req/pooled_user_op_hashes/1/`
 
 Request Content:
 
