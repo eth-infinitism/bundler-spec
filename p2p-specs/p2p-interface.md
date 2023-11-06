@@ -625,7 +625,7 @@ class UserOperationsWithEntryPoint(Container):
 
 ```python
 class PooledUserOps(Container):
-    mempool_id: bytes32
+    mempool_id: bytes
     more_flag: uint64
     user_operations: List[UserOp, MAX_OPS_PER_REQUEST]
 ```
