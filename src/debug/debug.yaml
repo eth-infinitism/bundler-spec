@@ -61,7 +61,7 @@
     schema:
       $ref: '#/components/schemas/Reputations'
 - name: debug_bundler_addUserOps
-  summary: Seeds the local mempool with the passed UserOps array.
+  summary: Adds the userOps array to the local mempool
   params:
     - name: userOperations
       required: true
