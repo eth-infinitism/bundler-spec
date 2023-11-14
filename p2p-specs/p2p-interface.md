@@ -4,12 +4,10 @@
 
 This document contains the networking specification of the bundler software for ERC4337. 
 
-It consists of four main sections:
+It consists of two main sections:
 
 1. A specification of the network fundamentals.
-2. A specification of the three network interaction *domains* of the bundler: (a) the gossip domain, (b) the discovery domain, and (c) the Req/Resp domain.
-3. The rationale and further explanation for the design choices made in the previous two sections.
-4. An analysis of the maturity/state of the libp2p features required by this spec across the languages in which bundler software are being developed.
+2. A specification of the three network interaction *domains* of the bundler: (a) the gossip domain, (b) the req/resp domain, and (c) the discovery domain.
 
 ## Table of contents
 <!-- TOC -->
@@ -17,48 +15,47 @@ It consists of four main sections:
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 - [Network fundamentals](#network-fundamentals)
-  * [Transport](#transport)
-  * [Encryption and identification](#encryption-and-identification)
-  * [Protocol Negotiation](#protocol-negotiation)
-  * [Multiplexing](#multiplexing)
+  - [Transport](#transport)
+  - [Encryption and identification](#encryption-and-identification)
+  - [Protocol Negotiation](#protocol-negotiation)
+  - [Multiplexing](#multiplexing)
 - [Bundler network interaction domains](#bundler-network-interaction-domains)
-  * [Configuration](#configuration)
-  * [MetaData](#metadata)
-  * [The gossip domain: gossipsub](#the-gossip-domain--gossipsub)
-    + [Topics and messages](#topics-and-messages)
+  - [Configuration](#configuration)
+  - [MetaData](#metadata)
+  - [The gossip domain: gossipsub](#the-gossip-domain-gossipsub)
+    - [Topics and messages](#topics-and-messages)
       - [Global topics](#global-topics)
-        * [`user_ops_with_entry_point`](#-user-ops-with-entry-point-)
-    + [Encodings](#encodings)
-    + [Mempool ID](#mempool-id)
-  * [The Req/Resp domain](#the-req-resp-domain)
-    + [Protocol identification](#protocol-identification)
-    + [Req/Resp interaction](#req-resp-interaction)
+        - [`user_ops_with_entry_point`](#user_ops_with_entry_point)
+    - [Encodings](#encodings)
+    - [Mempool ID](#mempool-id)
+  - [The Req/Resp domain](#the-reqresp-domain)
+    - [Protocol identification](#protocol-identification)
+    - [Req/Resp interaction](#reqresp-interaction)
       - [Requesting side](#requesting-side)
       - [Responding side](#responding-side)
-    + [Encoding strategies](#encoding-strategies)
+    - [Encoding strategies](#encoding-strategies)
       - [SSZ-snappy encoding strategy](#ssz-snappy-encoding-strategy)
-    + [Messages](#messages)
+    - [Messages](#messages)
       - [Status](#status)
       - [Goodbye](#goodbye)
       - [Ping](#ping)
       - [GetMetaData](#getmetadata)
       - [PooledUserOpHashes](#pooleduserophashes)
       - [PooledUserOpsByHash](#pooleduseropsbyhash)
-  * [The discovery domain: discv5](#the-discovery-domain--discv5)
-    + [Integration into libp2p stacks](#integration-into-libp2p-stacks)
-    + [ENR structure](#enr-structure)
+  - [The discovery domain: discv5](#the-discovery-domain-discv5)
+    - [Integration into libp2p stacks](#integration-into-libp2p-stacks)
+    - [ENR structure](#enr-structure)
       - [Mempools bitfield](#mempools-bitfield)
-  * [Container Specifications](#container-specifications)
-      - [`UserOp`](#-userop-)
-      - [`UserOperationsWithEntryPoint`](#-useroperationswithentrypoint-)
-      - [`PooledUserOps`](#-pooleduserops-)
+  - [Container Specifications](#container-specifications)
+      - [`UserOp`](#userop)
+      - [`UserOperationsWithEntryPoint`](#useroperationswithentrypoint)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 <!-- /TOC -->
 
 # Network fundamentals
 
-This section outlines the specification for the networking stack in ERC4337 bundlers.
+This section outlines the specification for the networking stack of ERC4337 bundlers.
 
 ## Transport
 
@@ -89,9 +86,9 @@ and MAY support [multiselect 2.0](https://github.com/libp2p/specs/pull/95) when 
 Once all Bundlers have implementations for multiselect 2.0, multistream-select 1.0 MAY be phased out.
 
 ## Multiplexing
-Like Ethereum consensus clients p2p specification, the Bundlers ought to support both multiplexer implementations of mplex and yamux. Their protocol IDs are, respectively: /mplex/6.7.0 and /yamux/1.0.0.
+Like Ethereum consensus clients p2p specification, the Bundlers SHOULD support both multiplexer implementations of mplex and yamux. Their protocol IDs are, respectively: /mplex/6.7.0 and /yamux/1.0.0.
 
-Clients MUST support mplex and MAY support yamux. If both are supported by the client, yamux MUST take precedence during negotiation. See the Rationale section below for tradeoffs.
+Clients MUST support mplex and MAY support yamux. If both are supported by the client, yamux MUST take precedence during negotiation.
 
 # Bundler network interaction domains
 
@@ -145,16 +142,16 @@ Bundlers MUST reject (fail validation) messages that are over this size limit.
 Likewise, Bundlers MUST NOT emit or propagate messages larger than this limit.
 
 The `message-id` of a gossipsub message MUST be the following 20 byte value computed from the message data:
-* If `message.data` has a valid snappy decompression, set `message-id` to the first 20 bytes of the `SHA256` hash of
-  the concatenation of `MESSAGE_DOMAIN_VALID_SNAPPY` with the snappy decompressed message data,
+* If `message.data` has a valid Snappy decompression, set `message-id` to the first 20 bytes of the `SHA256` hash of
+  the concatenation of `MESSAGE_DOMAIN_VALID_SNAPPY` with the Snappy decompressed message data,
   i.e. `SHA256(MESSAGE_DOMAIN_VALID_SNAPPY + snappy_decompress(message.data))[:20]`.
 * Otherwise, set `message-id` to the first 20 bytes of the `SHA256` hash of
   the concatenation of `MESSAGE_DOMAIN_INVALID_SNAPPY` with the raw message data,
   i.e. `SHA256(MESSAGE_DOMAIN_INVALID_SNAPPY + message.data)[:20]`.
 
 *Note*: The above logic handles two exceptional cases:
-(1) multiple snappy `data` can decompress to the same value,
-and (2) some message `data` can fail to snappy decompress altogether.
+(1) multiple Snappy `data` can decompress to the same value,
+and (2) some message `data` can fail to Snappy decompress altogether.
 
 The payload is carried in the `data` field of a gossipsub message, and varies depending on the topic:
 
@@ -175,9 +172,9 @@ The primary global topics used to propagate user operations to all nodes on the 
 
 ##### `user_ops_with_entry_point`
 
-The `user_ops_with_entry_point` topic is the concatenation of EntryPoint address and a list of UserOperations corresponding to the entry point address. This message is serialized using SSZ
+The `user_ops_with_entry_point` topic is the concatenation of EntryPoint address and a list of UserOperations corresponding to the entry point address. This message is serialized using SSZ.
 
-The following validations MUST pass before forwarding the `user_ops_with_entry_point` on the network
+The following validations MUST pass before forwarding the `user_ops_with_entry_point` on the network:
 - [IGNORE] `verified_at_block_hash` is too far in the past.
 - [REJECT] If any of the sanity checks specified in the [EIP](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-4337.md#client-behavior-upon-receiving-a-useroperation) fails.
 - [REJECT] If the simulated validation of the user operation fails.
@@ -186,15 +183,14 @@ The following validations MUST pass before forwarding the `user_ops_with_entry_p
 
 Topics are post-fixed with an encoding. Encodings define how the payload of a gossipsub message is encoded.
 
-
-ssz_snappy - All objects are SSZ-encoded and then compressed with Snappy block compression. Example: The user_ops_with_entry_point topic string of the canonical mempool is /account_abstraction/<mempool_id>/user_ops_with_entry_point/ssz_snappy, the <mempool_id> is `TBD` (the IPFS hash of the mempool yaml/JSON file) and the data field of a gossipsub message is a UserOpsWithEntryPoint that has been SSZ-encoded and then compressed with Snappy.
-Snappy has two formats: "block" and "frames" (streaming). Gossip messages remain relatively small (100s of bytes to 100s of kilobytes) so basic snappy block compression is used to avoid the additional overhead associated with snappy frames.
+ssz_snappy - All objects are SSZ-encoded and then compressed with Snappy block compression. Example: The `user_ops_with_entry_point` topic string of the canonical mempool is /account_abstraction/<mempool_id>/user_ops_with_entry_point/ssz_snappy, the <mempool_id> is `TBD` (the IPFS hash of the mempool yaml/JSON file) and the data field of a gossipsub message is a UserOpsWithEntryPoint that has been SSZ-encoded and then compressed with Snappy.
+Snappy has two formats: "block" and "frames" (streaming). Gossip messages remain relatively small (100s of bytes to 100s of kilobytes) so basic Snappy block compression is used to avoid the additional overhead associated with Snappy frames.
 
 Implementations MUST use a single encoding for gossip. Changing an encoding will require coordination between participating implementations.
 
 ### Mempool ID
 
-The metadata associated to each mempool that a bundler supports is documented and stored in IPFS (a copy of this is also suggested to be submitted to `eth-infinitism` Github repo). This IPFS hash of the file is called `mempool-id` and this is used as the topic for subscription in the bundlers. The proposed structure of the mempool metadata is as follows
+The metadata associated to each mempool that a bundler supports is documented and stored in IPFS (a copy of this is also suggested to be submitted to [`eth-infinitism`](https://github.com/eth-infinitism) Github repo). This IPFS hash of the file is called `mempool-id` and this is used as the topic for subscription in the bundlers. The proposed structure of the mempool metadata is as follows
 
 ```yaml
 chainId: '1'
@@ -250,10 +246,6 @@ Because req/resp streams are single-use and stream closures implicitly delimit t
 however, certain encodings like SSZ do, for added security.
 
 A `response` is formed by zero or more `response_chunk`s.
-
-Responses that consist of a single SSZ-list send each list item as a `response_chunk`.
-
-All other response types (non-Lists) send a single `response_chunk`.
 
 For both `request`s and `response`s, the `encoding-dependent-header` MUST be valid,
 and the `encoded-payload` must be valid within the constraints of the `encoding-dependent-header`.
@@ -351,27 +343,27 @@ Only one value is possible at this time:
 
 The [SimpleSerialize (SSZ) specification](https://github.com/ethereum/consensus-specs/blob/dev/ssz/simple-serialize.md) outlines how objects are SSZ-encoded.
 
-To achieve snappy encoding on top of SSZ, we feed the serialized form of the object to the Snappy compressor on encoding.
+To achieve Snappy encoding on top of SSZ, we feed the serialized form of the object to the Snappy compressor on encoding.
 The inverse happens on decoding.
 
 Snappy has two formats: "block" and "frames" (streaming).
-To support large requests and response chunks, snappy-framing is used.
+To support large requests and response chunks, Snappy-framing is used.
 
-Since snappy frame contents [have a maximum size of `65536` bytes](https://github.com/google/snappy/blob/master/framing_format.txt#L104)
+Since Snappy frame contents [have a maximum size of `65536` bytes](https://github.com/google/snappy/blob/master/framing_format.txt#L104)
 and frame headers are just `identifier (1) + checksum (4)` bytes, the expected buffering of a single frame is acceptable.
 
-**Encoding-dependent header:** Req/Resp protocols using the `ssz_snappy` encoding strategy MUST encode the length of the raw SSZ bytes,
+**Encoding-dependent header:** Req/resp protocols using the `ssz_snappy` encoding strategy MUST encode the length of the raw SSZ bytes,
 encoded as an unsigned [protobuf varint](https://developers.google.com/protocol-buffers/docs/encoding#varints).
 
 *Writing*: By first computing and writing the SSZ byte length, the SSZ encoder can then directly write the chunk contents to the stream.
 When Snappy is applied, it can be passed through a buffered Snappy writer to compress frame by frame.
 
 *Reading*: After reading the expected SSZ byte length, the SSZ decoder can directly read the contents from the stream.
-When snappy is applied, it can be passed through a buffered Snappy reader to decompress frame by frame.
+When Snappy is applied, it can be passed through a buffered Snappy reader to decompress frame by frame.
 
 Before reading the payload, the header MUST be validated:
 - The unsigned protobuf varint used for the length-prefix MUST not be longer than 10 bytes, which is sufficient for any `uint64`.
-- The length-prefix is within the expected [size bounds derived from the payload SSZ type](#what-are-ssz-type-size-bounds).
+- The length-prefix is within the expected size bounds derived from the payload SSZ type.
 
 After reading a valid header, the payload MAY be read, while maintaining the size constraints from the header.
 
@@ -388,11 +380,6 @@ In case of an invalid input (header or payload), a reader MUST:
 - From responses: ignore the response, the response MUST be considered bad server behavior.
 
 All messages that contain only a single field MUST be encoded directly as the type of that field and MUST NOT be encoded as an SSZ container.
-
-Responses that are SSZ-lists (for example `List[UserOperationsWithEntryPoint, ...]`) send their
-constituents individually as `response_chunk`s. For example, the
-`List[UserOperationsWithEntryPoint, ...]` response type sends zero or more `response_chunk`s.
-Each _successful_ `response_chunk` contains a single `UserOperationsWithEntryPoint` payload.
 
 ### Messages
 
@@ -412,13 +399,13 @@ The fields are, as seen by the client at the time of sending the message:
 
 The dialing client MUST send a `Status` request upon connection.
 
-The request/response MUST be encoded as an SSZ-container.
+The request/response MUST be encoded as a single SSZ-field.
 
 The response MUST consist of a single `response_chunk`.
 
 Clients SHOULD immediately disconnect from one another following the handshake above under the following conditions:
 
-1. If the supported_mempools and client's own list of supported mempools are disjoint.
+1. If the `supported_mempools` and client's own list of supported mempools are disjoint.
 
 #### Goodbye
 
@@ -472,7 +459,7 @@ If the peer does not respond to the `Ping` request, the client MAY disconnect fr
 A client can then determine if their local record of a peer's MetaData is up to date
 and MAY request an updated version via the `MetaData` RPC method if not.
 
-The request MUST be encoded as an SSZ-field.
+The request/response MUST be encoded as an SSZ-field.
 
 The response MUST consist of a single `response_chunk`.
 
@@ -501,7 +488,7 @@ The response MUST consist of a single `response_chunk`.
 
 #### PooledUserOpHashes
 
-**Protocol ID:** `/account_abstraction/req/pooled_user_ops_hashes/1/`
+**Protocol ID:** `/account_abstraction/req/pooled_user_op_hashes/1/`
 
 Request Content:
 
@@ -520,8 +507,11 @@ Response Content:
 )
 ```
 
-The `pooled_user_ops_by_hash` requests UserOp mempool of all connected peers as soon as bundler node starts up. The node requests UserOps from the recipients mempool for a given `mempool_id` and `offset`. The `offset` is set to `0` for the initial call. The recommended soft limit for PooledUserOpHashes requests is MAX_OPS_PER_REQUEST hashes. The recipient may enforce an arbitrary limit on the response (size or serving time), which must not be considered a protocol violation. The `more_flag` is set to 0, if the connected peer's reported hashes is <= to MAX_OPS_PER_REQUEST. otherwise the `more_flag` is set to a value > 0. The value of `more_flag` can be used to determine the number of subsequent req/resp a node has to perform to refetch the missing hashes from the connected peer.
+The `pooled_user_ops_by_hash` requests UserOp mempool of all connected peers as soon as bundler node starts up. The node requests UserOps from the recipients mempool for a given `mempool_id` and `offset`. The `offset` is set to `0` for the initial call. The recommended soft limit for PooledUserOpHashes requests is `MAX_OPS_PER_REQUEST` hashes. The recipient may enforce an arbitrary limit on the response (size or serving time), which must not be considered a protocol violation. The `more_flag` is set to 0, if the connected peer's reported hashes is <= to `MAX_OPS_PER_REQUEST`. Otherwise the `more_flag` is set to a value > 0. The value of `more_flag` can be used to determine the number of subsequent req/resp a node has to perform to refetch the missing hashes from the connected peer.
 
+The request/response MUST be encoded as a single SSZ-field.
+
+The response MUST consist of a single `response_chunk`.
 
 #### PooledUserOpsByHash
 
@@ -531,7 +521,7 @@ Request Content:
 
 ```
 (
-  hashes: List[bytes32, MAX_OPS_PER_REQUEST]
+  List[bytes32, MAX_OPS_PER_REQUEST]
 )
 ```
 
@@ -542,7 +532,12 @@ Response Content:
 )
 ```
 
-The `pooled_user_ops_by_hash` requests UserOps from the recipients UserOp mempool for a given EntryPoint contract address. The recommended soft limit for PooledUserOpsByHash requests is MAX_OPS_PER_REQUEST hashes. The recipient may enforce an arbitrary limit on the response (size or serving time), which must not be considered a protocol violation. 
+The `pooled_user_ops_by_hash` requests UserOps from the recipients UserOp mempool for a given EntryPoint contract address. The recommended soft limit for PooledUserOpsByHash requests is MAX_OPS_PER_REQUEST hashes. The recipient may enforce an arbitrary limit on the response (size or serving time), which must not be considered a protocol violation.
+
+The request MUST be encoded as a single SSZ-field.
+
+The response MUST consist of zero or more `response_chunk`. Each successful `response_chunk` MUST contain a single `UserOp` payload.
+
  
 ## The discovery domain: discv5
 
@@ -567,7 +562,7 @@ This integration enables the libp2p stack to subsequently form connections and s
 The bundlers will use the same type of Ethereum Node Record (ENR) that Ethereum consensus clients use. Essentially, they MUST contain the following entries
 (exclusive of the sequence number and signature, which MUST be present in an ENR):
 
--  The compressed secp256k1 publickey, 33 bytes (`secp256k1` field).
+- The compressed secp256k1 publickey, 33 bytes (`secp256k1` field).
 
 The ENR MAY contain the following entries:
 
@@ -618,14 +613,5 @@ class UserOperationsWithEntryPoint(Container):
     entry_point_contract: Address
     verified_at_block_hash: uint256
     chain_id: uint256
-    user_operations: List[UserOp, MAX_OPS_PER_REQUEST]
-```
-
-#### `PooledUserOps`
-
-```python
-class PooledUserOps(Container):
-    mempool_id: bytes32
-    more_flag: uint64
     user_operations: List[UserOp, MAX_OPS_PER_REQUEST]
 ```
