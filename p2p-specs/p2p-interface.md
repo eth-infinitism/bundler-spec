@@ -98,10 +98,11 @@ This section outlines constants that are used in this spec.
 
 | Name | Value | Description |
 |---|---|---|
-| `GOSSIP_MAX_SIZE`    | `2**20` (= 1048576, 1 MiB) | The maximum allowed size of uncompressed gossip messages. |
-| `MAX_OPS_PER_REQUEST`| `4096` | Maximum number of UserOps in a single request. |
-| `RESP_TIMEOUT`	     | `10s` | The maximum time for complete response transfer. |
-| `TTFB_TIMEOUT`       | `5s` | The maximum time to wait for first byte of request response (time-to-first-byte). |
+| `GOSSIP_MAX_SIZE`       | `2**20` (= 1048576, 1 MiB) | The maximum allowed size of uncompressed gossip messages. |
+| `MAX_OPS_PER_REQUEST`   | `4096` | Maximum number of UserOps in a single request. |
+| `RESP_TIMEOUT`	        | `10s` | The maximum time for complete response transfer. |
+| `TTFB_TIMEOUT`          | `5s` | The maximum time to wait for first byte of request response (time-to-first-byte). |
+| `MAX_SUPPORTED_MEMPOOLS`| 1024 | The maximum amount of supported mempools. |
 
 
 ## MetaData
@@ -112,13 +113,15 @@ Bundlers MUST locally store the following `MetaData`:
 (
   seq_number: uint64
   mempool_nets: Bitvector[MEMPOOL_SUBNET_COUNT]
+  supported_mempools: List[Bytes32, MAX_SUPPORTED_MEMPOOLS]
 )
 ```
 
 Where
 
-`seq_number` is a `uint64` starting at 0 used to version the node's metadata. If any other field in the local `MetaData` changes, the node MUST increment `seq_number` by 1.
-`mempool_nets` is a Bitvector representing the node's persistent mempool subnet subscriptions.
+- `seq_number` is a `uint64` starting at 0 used to version the node's metadata. If any other field in the local `MetaData` changes, the node MUST increment `seq_number` by 1.
+- `mempool_nets` is a Bitvector representing the node's persistent mempool subnet subscriptions.
+- `supported_mempools` is a list of [`mempool-id`](#Mempool-id)s
 
 
 ## The gossip domain: gossipsub
@@ -390,12 +393,16 @@ All messages that contain only a single field MUST be encoded directly as the ty
 Request, Response Content:
 ```
 (
-  List[bytes32,MAX_OPS_PER_REQUEST]
+  chain_id: uint64
+  block_hash: Bytes32
+  block_number: uint64
 )
 ```
 The fields are, as seen by the client at the time of sending the message:
 
-- supported_mempools - List of supported mempools.
+- chain_id - Chain ID of the bundler's network. For a community curated list of chain IDs, see https://chainid.network.
+- block_hash - Last block hash seen by the bundler.
+- block_number - Last block number seen by the bundler.
 
 The dialing client MUST send a `Status` request upon connection.
 
@@ -403,9 +410,13 @@ The request/response MUST be encoded as a single SSZ-field.
 
 The response MUST consist of a single `response_chunk`.
 
-Clients SHOULD immediately disconnect from one another following the handshake above under the following conditions:
+Clients MUST immediately disconnect from one another following the handshake above under the following conditions:
 
-1. If the `supported_mempools` and client's own list of supported mempools are disjoint.
+1. If `chain_id` does not match the node's local `chain_id`, since the peer is on another network. This is a configuration error.
+
+Clients MAY disconnect from peers under the following conditions:
+
+1. A peers whose `block_number` is sufficiently behind the current local block number. This is to check the liveliness and reorg status of the peer. Implementors are free to define this limit and it is likely to be network dependent. Some amount of leniency is suggested as nodes discover new blocks at different rates.
 
 #### Goodbye
 
