@@ -198,14 +198,13 @@ The metadata associated to each mempool that a bundler supports is documented an
 
 ```yaml
 chainId: '1'
-entryPointContract: '0x0576a174d229e3cfa37253523e645a78a0c91b57'
+entryPointContract: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789'
 description: >-
   This is the default/canonical mempool, which will be used by most bundlers on
   Ethereum Mainnnet
 minimumStake: '0.0'
 ```
-The `mempool-id` of the canonical mempool is `TBD` (IPFS hash of the yaml/JSON file).
-
+The `mempool_id` of the canonical mempool is `TBD` (IPFS hash of the yaml/JSON file).
 
 ## The Req/Resp domain
 
@@ -507,7 +506,7 @@ Request Content:
 
 ```
 (
-  mempool: Bytes32
+  mempool_id: Bytes32
   offset: uint64
 )
 ```
@@ -531,7 +530,7 @@ Request Content:
 
 ```
 (
-  hashes: List[bytes32, MAX_OPS_PER_REQUEST]
+  List[bytes32, MAX_OPS_PER_REQUEST]
 )
 ```
 
