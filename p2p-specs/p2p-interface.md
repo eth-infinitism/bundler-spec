@@ -528,7 +528,7 @@ Request Content:
 Response Content: 
 ```
 (
-  List[UserOp, MAX_OPS_PER_REQUEST]
+  List[PooledUserOp, MAX_OPS_PER_REQUEST]
 )
 ```
 
@@ -614,4 +614,10 @@ class UserOperationsWithEntryPoint(Container):
     verified_at_block_hash: uint256
     chain_id: uint256
     user_operations: List[UserOp, MAX_OPS_PER_REQUEST]
+```
+
+```python
+class PooledUserOp(Container):
+    verified_at_block_hash: uint256
+    user_operation: UserOp
 ```
