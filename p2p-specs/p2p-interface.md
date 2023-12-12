@@ -390,7 +390,7 @@ All messages that contain only a single field MUST be encoded directly as the ty
 Request, Response Content:
 ```
 (
-  List[bytes32,MAX_OPS_PER_REQUEST]
+  List[bytes46,MAX_OPS_PER_REQUEST]
 )
 ```
 The fields are, as seen by the client at the time of sending the message:
@@ -494,7 +494,7 @@ Request Content:
 
 ```
 (
-  mempool: Bytes32
+  mempool: Bytes46
   offset: uint64
 )
 ```
