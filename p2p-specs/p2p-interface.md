@@ -102,7 +102,7 @@ This section outlines constants that are used in this spec.
 | `MAX_OPS_PER_REQUEST`| `4096` | Maximum number of UserOps in a single request. |
 | `RESP_TIMEOUT`	     | `10s` | The maximum time for complete response transfer. |
 | `TTFB_TIMEOUT`       | `5s` | The maximum time to wait for first byte of request response (time-to-first-byte). |
-
+| `MEMPOOL_SUBNET_COUNT`       | `2**6` (=64) | The number of mempool subnets used in the gossipsub protocol. |
 
 ## MetaData
 
