@@ -107,8 +107,8 @@ This section outlines constants that are used in this spec.
 
 This section outlines type definitions that are used in this spec.
 
-| Name | Value | Description |
-|---|---|---|
+| Name | Description |
+|---|---|
 | `bytes32`    | Fixed lenght array of bytes with length 32|
 | `bytes46`    | Fixed lenght array of bytes with length 46|
 
