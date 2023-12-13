@@ -103,6 +103,14 @@ This section outlines constants that are used in this spec.
 | `RESP_TIMEOUT`	     | `10s` | The maximum time for complete response transfer. |
 | `TTFB_TIMEOUT`       | `5s` | The maximum time to wait for first byte of request response (time-to-first-byte). |
 
+## Type Definitions
+
+This section outlines type definitions that are used in this spec.
+
+| Name | Value | Description |
+|---|---|---|
+| `bytes32`    | Fixed lenght array of bytes with length 32|
+| `bytes46`    | Fixed lenght array of bytes with length 46|
 
 ## MetaData
 
@@ -133,7 +141,7 @@ Topics are plain UTF-8 strings and are encoded on the wire as determined by prot
 Topic strings have form: `/account_abstraction/mempool_id/Name/Encoding`.
 This defines both the type of data being sent on the topic and how the data field of the message is encoded.
 
-- `mempool_id` - the lower case IPFS hash of the file that contains the description of the metadata of the mempool. Please see [mempool-id](#mempool-id) section for further details.
+- `mempool_id` - the IPFS hash(including the "Qm" prefix) of the file that contains the description of the metadata of the mempool. Please see [mempool-id](#mempool-id) section for further details.
 - `Name` - see table below
 - `Encoding` - the encoding strategy describes a specific representation of bytes that will be transmitted over the wire. See the [Encodings](#Encodings) section for further details.
 
@@ -395,7 +403,7 @@ Request, Response Content:
 ```
 The fields are, as seen by the client at the time of sending the message:
 
-- supported_mempools - List of supported mempools.
+- supported_mempools - List of the ascii encoding of the IPFS hash(including the "Qm" prefix) for the supported mempools, the ascii encoding of the ipfs hash has a fixed length of 46 bytes.
 
 The dialing client MUST send a `Status` request upon connection.
 
@@ -494,7 +502,7 @@ Request Content:
 
 ```
 (
-  mempool: Bytes46
+  mempool: bytes46
   offset: uint64
 )
 ```
@@ -503,11 +511,11 @@ Response Content:
 ```
 (
   more_flag: uint64
-  hashes: List[Bytes32, MAX_OPS_PER_REQUEST]
+  hashes: List[bytes32, MAX_OPS_PER_REQUEST]
 )
 ```
 
-The `pooled_user_ops_by_hash` requests UserOp mempool of all connected peers as soon as bundler node starts up. The node requests UserOps from the recipients mempool for a given `mempool_id` and `offset`. The `offset` is set to `0` for the initial call. The recommended soft limit for PooledUserOpHashes requests is `MAX_OPS_PER_REQUEST` hashes. The recipient may enforce an arbitrary limit on the response (size or serving time), which must not be considered a protocol violation. The `more_flag` is set to 0, if the connected peer's reported hashes is <= to `MAX_OPS_PER_REQUEST`. Otherwise the `more_flag` is set to a value > 0. The value of `more_flag` can be used to determine the number of subsequent req/resp a node has to perform to refetch the missing hashes from the connected peer.
+The `pooled_user_ops_by_hash` requests UserOp mempool of all connected peers as soon as bundler node starts up. The node requests UserOps from the recipients mempool for a given `mempool` and `offset`. The `mempool` is the ascii encoding of the IPFS hash(including the "Qm" prefix) for the mempool, the ascii encoding of the ipfs hash has a fixed length of 46 bytes. The `offset` is set to `0` for the initial call. The recommended soft limit for PooledUserOpHashes requests is `MAX_OPS_PER_REQUEST` hashes. The recipient may enforce an arbitrary limit on the response (size or serving time), which must not be considered a protocol violation. The `more_flag` is set to 0, if the connected peer's reported hashes is <= to `MAX_OPS_PER_REQUEST`. Otherwise the `more_flag` is set to a value > 0. The value of `more_flag` can be used to determine the number of subsequent req/resp a node has to perform to refetch the missing hashes from the connected peer.
 
 The request/response MUST be encoded as a single SSZ-field.
 
