@@ -60,3 +60,17 @@
     name: reputations
     schema:
       $ref: '#/components/schemas/Reputations'
+
+- name: debug_bundler_addUserOps
+  summary: Add a bulk of UserOps into the mempool
+  params:
+    - name: userOps
+      required: true
+      schema:
+        type: array
+        items:
+          $ref: '#/components/schemas/UserOperation'
+  result:
+    name: ok
+    schema:
+      $ref: '#/components/schemas/ok'
