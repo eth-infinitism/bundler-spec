@@ -142,7 +142,7 @@ This defines both the type of data being sent on the topic and how the data fiel
 
 Each gossipsub [message](https://github.com/libp2p/go-libp2p-pubsub/blob/master/pb/rpc.proto#L17-L24) has a maximum size of `GOSSIP_MAX_SIZE`.
 Bundlers MUST reject (fail validation) messages that are over this size limit.
-Likewise, Bundlers MUST NOT emit or propagate messages larger than this limit.
+Likewise, Bundlers MUST NOT emit or propagate messages larger than this limit. As in ETH2, Client's MUST enforce the `StrictNoSign` [signature policy](https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/p2p-interface.md#why-are-we-using-the-strictnosign-signature-policy) on the messages.
 
 The `message-id` of a gossipsub message MUST be the following 20 byte value computed from the message data:
 * If `message.data` has a valid Snappy decompression, set `message-id` to the first 20 bytes of the `SHA256` hash of
