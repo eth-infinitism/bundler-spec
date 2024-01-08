@@ -45,7 +45,7 @@ It consists of two main sections:
   - [The discovery domain: discv5](#the-discovery-domain-discv5)
     - [Integration into libp2p stacks](#integration-into-libp2p-stacks)
     - [ENR structure](#enr-structure)
-      - [Mempools bitfield](#mempools-bitfield)
+      - [Chain id field](#chain-id-field)
   - [Container Specifications](#container-specifications)
       - [`UserOp`](#userop)
       - [`UserOperationsWithEntryPoint`](#useroperationswithentrypoint)
@@ -112,16 +112,12 @@ Bundlers MUST locally store the following `MetaData`:
 ```
 (
   seq_number: uint64
-  mempool_nets: Bitvector[MEMPOOL_SUBNET_COUNT]
-  supported_mempools: List[Bytes32, MAX_SUPPORTED_MEMPOOLS]
 )
 ```
 
 Where
 
-- `seq_number` is a `uint64` starting at 0 used to version the node's metadata. If any other field in the local `MetaData` changes, the node MUST increment `seq_number` by 1.
-- `mempool_nets` is a Bitvector representing the node's persistent mempool subnet subscriptions.
-- `supported_mempools` is a list of [`mempool-id`](#Mempool-id)s
+`seq_number` is a `uint64` starting at 0 used to version the node's metadata. If any other field in the local `MetaData` changes, the node MUST increment `seq_number` by 1.
 
 
 ## The gossip domain: gossipsub
@@ -583,18 +579,15 @@ The ENR MAY contain the following entries:
 
 Specifications of these parameters can be found in the [ENR Specification](http://eips.ethereum.org/EIPS/eip-778).
 
-#### Mempools bitfield
+#### Chain id field
 
-The ENR `mempools` entry signifies the mempools subnet bitfield with the following form
-to more easily discover peers participating in particular mempool id gossip subnets.
+ENRs MUST carry a `chain_id` key containing the ID of the network the bundler is connected to. This is done to ensure connections are made with peers on the intended Ethereum network.
 
-| Key                 | Value                                            |
-|:--------------------|:-------------------------------------------------|
-| `mempool_subnets`   | SSZ `Bitvector[MEMPOOL_ID_SUBNET_COUNT]`        |
+| Key        | Value        |
+|:-----------|:-------------|
+| `chain_id` | SSZ `uint64` |
 
-If a node's `MetaData.mempool_subnets` has any non-zero bit, the ENR MUST include the `mempool_subnets` entry with the same value as `MetaData.mempool_subnets`.
-
-If a node's `MetaData.mempool_subnets` is composed of all zeros, the ENR MAY optionally include the `mempool_subnets` entry or leave it out entirely.
+Clients MUST connect to peers with a `chain_id` that matches its local value.
 
 ## Container Specifications
 
