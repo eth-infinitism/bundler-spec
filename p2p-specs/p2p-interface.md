@@ -45,7 +45,7 @@ It consists of two main sections:
   - [The discovery domain: discv5](#the-discovery-domain-discv5)
     - [Integration into libp2p stacks](#integration-into-libp2p-stacks)
     - [ENR structure](#enr-structure)
-      - [Mempools bitfield](#mempools-bitfield)
+      - [Chain id field](#chain-id-field)
   - [Container Specifications](#container-specifications)
       - [`UserOp`](#userop)
       - [`UserOperationsWithEntryPoint`](#useroperationswithentrypoint)
@@ -98,10 +98,12 @@ This section outlines constants that are used in this spec.
 
 | Name | Value | Description |
 |---|---|---|
-| `GOSSIP_MAX_SIZE`    | `2**20` (= 1048576, 1 MiB) | The maximum allowed size of uncompressed gossip messages. |
-| `MAX_OPS_PER_REQUEST`| `4096` | Maximum number of UserOps in a single request. |
-| `RESP_TIMEOUT`	     | `10s` | The maximum time for complete response transfer. |
-| `TTFB_TIMEOUT`       | `5s` | The maximum time to wait for first byte of request response (time-to-first-byte). |
+| `GOSSIP_MAX_SIZE`              | `2**20` (= 1048576, 1 MiB) | The maximum allowed size of uncompressed gossip messages. |
+| `MAX_OPS_PER_REQUEST`          | `4096`                     | Maximum number of UserOps in a single request. |
+| `RESP_TIMEOUT`                 | `10s`                      | The maximum time for complete response transfer. |
+| `TTFB_TIMEOUT`                 | `5s`                       | The maximum time to wait for first byte of request response (time-to-first-byte). |
+| `POOLED_HASHES_CONTEXT_TIMEOUT`| `10s`                      | The amount of time to maintain a request context of pooled hashes. |
+| `MAX_SUPPORTED_MEMPOOLS`       | `1024`                     | The maximum amount of supported mempools. |
 
 
 ## MetaData
@@ -111,14 +113,12 @@ Bundlers MUST locally store the following `MetaData`:
 ```
 (
   seq_number: uint64
-  mempool_nets: Bitvector[MEMPOOL_SUBNET_COUNT]
 )
 ```
 
 Where
 
 `seq_number` is a `uint64` starting at 0 used to version the node's metadata. If any other field in the local `MetaData` changes, the node MUST increment `seq_number` by 1.
-`mempool_nets` is a Bitvector representing the node's persistent mempool subnet subscriptions.
 
 
 ## The gossip domain: gossipsub
@@ -390,12 +390,16 @@ All messages that contain only a single field MUST be encoded directly as the ty
 Request, Response Content:
 ```
 (
-  List[bytes32,MAX_OPS_PER_REQUEST]
+  chain_id: uint64
+  block_hash: Bytes32
+  block_number: uint64
 )
 ```
 The fields are, as seen by the client at the time of sending the message:
 
-- supported_mempools - List of supported mempools.
+- chain_id - Chain ID of the bundler's network. For a community curated list of chain IDs, see https://chainid.network.
+- block_hash - Last block hash seen by the bundler.
+- block_number - Last block number seen by the bundler.
 
 The dialing client MUST send a `Status` request upon connection.
 
@@ -403,9 +407,13 @@ The request/response MUST be encoded as a single SSZ-field.
 
 The response MUST consist of a single `response_chunk`.
 
-Clients SHOULD immediately disconnect from one another following the handshake above under the following conditions:
+Clients MUST immediately disconnect from one another following the handshake above under the following conditions:
 
-1. If the `supported_mempools` and client's own list of supported mempools are disjoint.
+1. If `chain_id` does not match the node's local `chain_id`, since the peer is on another network. This is a configuration error.
+
+Clients MAY disconnect from peers under the following conditions:
+
+1. A peers whose `block_number` is sufficiently behind the current local block number. This is to check the liveliness and reorg status of the peer. Implementors are free to define this limit and it is likely to be network dependent. Some amount of leniency is suggested as nodes discover new blocks at different rates.
 
 #### Goodbye
 
@@ -494,24 +502,38 @@ Request Content:
 
 ```
 (
-  mempool: Bytes32
-  offset: uint64
+  // cursor
+  Bytes32
 )
 ```
 
 Response Content: 
 ```
 (
-  more_flag: uint64
   hashes: List[Bytes32, MAX_OPS_PER_REQUEST]
+  next_cursor: Bytes32
 )
 ```
 
-The `pooled_user_ops_by_hash` requests UserOp mempool of all connected peers as soon as bundler node starts up. The node requests UserOps from the recipients mempool for a given `mempool_id` and `offset`. The `offset` is set to `0` for the initial call. The recommended soft limit for PooledUserOpHashes requests is `MAX_OPS_PER_REQUEST` hashes. The recipient may enforce an arbitrary limit on the response (size or serving time), which must not be considered a protocol violation. The `more_flag` is set to 0, if the connected peer's reported hashes is <= to `MAX_OPS_PER_REQUEST`. Otherwise the `more_flag` is set to a value > 0. The value of `more_flag` can be used to determine the number of subsequent req/resp a node has to perform to refetch the missing hashes from the connected peer.
+The `pooled_user_ops_by_hash` request is used to sync the mempool contents of a connected peer. Clients MAY send this request to each peer as they are connected when the bundler node starts up in order to sync their mempool.
 
-The request/response MUST be encoded as a single SSZ-field.
+In the initial request the requestor should send a zero-value cursor, indicating to the recipient to start a new request context.
 
-The response MUST consist of a single `response_chunk`.
+As part of the initial handshake process the recipient of this request MUST know the mempool IDs that the requester and recipient have in common. Upon receiving a request with an empty cursor, the recipient MUST construct a list of user operation hashes from these common mempools. The recipient responds with this list of hashes. If the number of hashes is greater than `MAX_OPS_PER_REQUEST`, the recipient MAY respond with a non-zero `next_cursor` value and save a request context.
+
+`next_cursor` is an opaque value chosen by the recipient to enable pagination in the request context.
+
+If a requestor receives a non-zero `next_cursor` value, they MAY send a request with this cursor value. The recipient interprets this cursor and responds with another, disjoint, list of hashes. This process can continue until the recipient runs out valid hashes and returns a zero `next_cursor` value. The recipient MUST remove any already mined hashes from the request context as to respond with only valid user operations. The recipient should otherwise not modify the context and user operations that were added to the pool after the initial request are not subject to this request context and can be received by starting a new request.
+
+A recipient SHOULD drop a request context after `POOLED_HASHES_CONTEXT_TIMEOUT` seconds from initial request, if a cursor is received for a context that is timed out the recipient MUST return an error.
+
+The requester SHOULD:
+- Complete its requests within `POOLED_HASHES_CONTEXT_TIMEOUT`
+- Disconnect from any peer that responds with a user operation that does not belong to one of their supported mempools.
+
+The request MUST be encoded as a single SSZ-field.
+
+The response MUST be encoded as an SSZ-container and MUST consist of a single `response_chunk`.
 
 #### PooledUserOpsByHash
 
@@ -572,18 +594,15 @@ The ENR MAY contain the following entries:
 
 Specifications of these parameters can be found in the [ENR Specification](http://eips.ethereum.org/EIPS/eip-778).
 
-#### Mempools bitfield
+#### Chain id field
 
-The ENR `mempools` entry signifies the mempools subnet bitfield with the following form
-to more easily discover peers participating in particular mempool id gossip subnets.
+ENRs MUST carry a `chain_id` key containing the ID of the network the bundler is connected to. This is done to ensure connections are made with peers on the intended Ethereum network.
 
-| Key                 | Value                                            |
-|:--------------------|:-------------------------------------------------|
-| `mempool_subnets`   | SSZ `Bitvector[MEMPOOL_ID_SUBNET_COUNT]`        |
+| Key        | Value        |
+|:-----------|:-------------|
+| `chain_id` | SSZ `uint64` |
 
-If a node's `MetaData.mempool_subnets` has any non-zero bit, the ENR MUST include the `mempool_subnets` entry with the same value as `MetaData.mempool_subnets`.
-
-If a node's `MetaData.mempool_subnets` is composed of all zeros, the ENR MAY optionally include the `mempool_subnets` entry or leave it out entirely.
+Clients MUST connect to peers with a `chain_id` that matches its local value.
 
 ## Container Specifications
 
