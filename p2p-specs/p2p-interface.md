@@ -115,12 +115,14 @@ Bundlers MUST locally store the following `MetaData`:
 ```
 (
   seq_number: uint64
+  supported_mempools: List[Bytes32, MAX_SUPPORTED_MEMPOOLS]
 )
 ```
 
 Where
 
-`seq_number` is a `uint64` starting at 0 used to version the node's metadata. If any other field in the local `MetaData` changes, the node MUST increment `seq_number` by 1.
+- `seq_number` is a `uint64` starting at 0 used to version the node's metadata. If any other field in the local `MetaData` changes, the node MUST increment `seq_number` by 1.
+- `supported_mempools` is a list of [`mempool-id`](#Mempool-id)s
 
 
 ## The gossip domain: gossipsub
@@ -208,7 +210,7 @@ chainId: '1'
 entryPointContract: '0x0576a174d229e3cfa37253523e645a78a0c91b57'
 description: >-
   This is the default/canonical mempool, which will be used by most bundlers on
-  Ethereum Mainnnet
+  Ethereum Mainnet
 minimumStake: '0.0'
 ```
 The `mempool-id` of the canonical mempool is `TBD` (IPFS hash of the yaml/JSON file).
