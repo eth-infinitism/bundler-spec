@@ -106,6 +106,7 @@ This section outlines constants that are used in this spec.
 | `MAX_SUPPORTED_MEMPOOLS`        | `1024`                     | The maximum amount of supported mempools. |
 | `MESSAGE_DOMAIN_INVALID_SNAPPY` | `DomainType('0x00000000')` | 4-byte domain for gossip message-id isolation of *invalid* snappy messages |
 | `MESSAGE_DOMAIN_VALID_SNAPPY`   | `DomainType('0x01000000')` | 4-byte domain for gossip message-id isolation of *valid* snappy messages |(feat(p2p): redefine the gossip message id and contents)
+| `MAX_IPFS_CID_LENGTH`           | `256`                      | The maximum length for the IPFS CID string.|
 
 ## Type Definitions
 
@@ -142,7 +143,10 @@ Topics are plain UTF-8 strings and are encoded on the wire as determined by prot
 Topic strings have form: `/account_abstraction/mempool_id/Name/Encoding`.
 This defines both the type of data being sent on the topic and how the data field of the message is encoded.
 
-- `mempool_id` - the IPFS hash(including the "Qm" prefix) of the file that contains the description of the metadata of the mempool. Please see [mempool-id](#mempool-id) section for further details.
+- `mempool_id` - the IPFS CID string of the file that contains the description of the metadata of the mempool. Please see [mempool-id](#mempool-id) section for further details.
+```
+  mempool_id: List<byte, MAX_IPFS_CID_LENGTH>
+```
 - `Name` - see table below
 - `Encoding` - the encoding strategy describes a specific representation of bytes that will be transmitted over the wire. See the [Encodings](#Encodings) section for further details.
 
