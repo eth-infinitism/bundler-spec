@@ -421,7 +421,6 @@ Request, Response Content:
 ```
 The fields are, as seen by the client at the time of sending the message:
 
-
 - chain_id - Chain ID of the bundler's network. For a community curated list of chain IDs, see https://chainid.network.
 - block_hash - Last block hash seen by the bundler.
 - block_number - Last block number seen by the bundler.
@@ -575,7 +574,7 @@ Request Content:
 Response Content: 
 ```
 (
-  List[PooledUserOp, MAX_OPS_PER_REQUEST]
+  List[VerifiedUserOperation, MAX_OPS_PER_REQUEST]
 )
 ```
 
@@ -657,10 +656,4 @@ class VerifiedUserOperation(Container):
     user_operation: UserOp
     entry_point: Address
     verified_at_block_hash: uint256
-```
-
-```python
-class PooledUserOp(Container):
-    verified_at_block_hash: uint256
-    user_operation: UserOp
 ```
