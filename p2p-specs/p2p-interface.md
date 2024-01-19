@@ -25,7 +25,7 @@ It consists of two main sections:
   - [The gossip domain: gossipsub](#the-gossip-domain-gossipsub)
     - [Topics and messages](#topics-and-messages)
       - [Global topics](#global-topics)
-        - [`user_ops_with_entry_point`](#user_ops_with_entry_point)
+        - [`user_operations`](#user_operations)
     - [Encodings](#encodings)
     - [Mempool ID](#mempool-id)
   - [The Req/Resp domain](#the-reqresp-domain)
@@ -45,10 +45,10 @@ It consists of two main sections:
   - [The discovery domain: discv5](#the-discovery-domain-discv5)
     - [Integration into libp2p stacks](#integration-into-libp2p-stacks)
     - [ENR structure](#enr-structure)
-      - [Mempools bitfield](#mempools-bitfield)
+      - [Chain id field](#chain-id-field)
   - [Container Specifications](#container-specifications)
       - [`UserOp`](#userop)
-      - [`UserOperationsWithEntryPoint`](#useroperationswithentrypoint)
+      - [`VerifiedUserOperation`](#verifieduseroperation)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 <!-- /TOC -->
@@ -98,10 +98,14 @@ This section outlines constants that are used in this spec.
 
 | Name | Value | Description |
 |---|---|---|
-| `GOSSIP_MAX_SIZE`    | `2**20` (= 1048576, 1 MiB) | The maximum allowed size of uncompressed gossip messages. |
-| `MAX_OPS_PER_REQUEST`| `4096` | Maximum number of UserOps in a single request. |
-| `RESP_TIMEOUT`	     | `10s` | The maximum time for complete response transfer. |
-| `TTFB_TIMEOUT`       | `5s` | The maximum time to wait for first byte of request response (time-to-first-byte). |
+| `GOSSIP_MAX_SIZE`               | `2**20` (= 1048576, 1 MiB) | The maximum allowed size of uncompressed gossip messages. |
+| `MAX_OPS_PER_REQUEST`           | `4096`                     | Maximum number of UserOps in a single request. |
+| `RESP_TIMEOUT`                  | `10s`                      | The maximum time for complete response transfer. |
+| `TTFB_TIMEOUT`                  | `5s`                       | The maximum time to wait for first byte of request response (time-to-first-byte). |
+| `POOLED_HASHES_CONTEXT_TIMEOUT` | `10s`                      | The amount of time to maintain a request context of pooled hashes. |
+| `MAX_SUPPORTED_MEMPOOLS`        | `1024`                     | The maximum amount of supported mempools. |
+| `MESSAGE_DOMAIN_INVALID_SNAPPY` | `DomainType('0x00000000')` | 4-byte domain for gossip message-id isolation of *invalid* snappy messages |
+| `MESSAGE_DOMAIN_VALID_SNAPPY`   | `DomainType('0x01000000')` | 4-byte domain for gossip message-id isolation of *valid* snappy messages |(feat(p2p): redefine the gossip message id and contents)
 
 ## Type Definitions
 
@@ -119,14 +123,12 @@ Bundlers MUST locally store the following `MetaData`:
 ```
 (
   seq_number: uint64
-  mempool_nets: Bitvector[MEMPOOL_SUBNET_COUNT]
 )
 ```
 
 Where
 
 `seq_number` is a `uint64` starting at 0 used to version the node's metadata. If any other field in the local `MetaData` changes, the node MUST increment `seq_number` by 1.
-`mempool_nets` is a Bitvector representing the node's persistent mempool subnet subscriptions.
 
 
 ## The gossip domain: gossipsub
@@ -147,15 +149,18 @@ This defines both the type of data being sent on the topic and how the data fiel
 
 Each gossipsub [message](https://github.com/libp2p/go-libp2p-pubsub/blob/master/pb/rpc.proto#L17-L24) has a maximum size of `GOSSIP_MAX_SIZE`.
 Bundlers MUST reject (fail validation) messages that are over this size limit.
-Likewise, Bundlers MUST NOT emit or propagate messages larger than this limit.
+Likewise, Bundlers MUST NOT emit or propagate messages larger than this limit. As in ETH2, Client's MUST enforce the `StrictNoSign` [signature policy](https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/p2p-interface.md#why-are-we-using-the-strictnosign-signature-policy) on the messages.
 
 The `message-id` of a gossipsub message MUST be the following 20 byte value computed from the message data:
-* If `message.data` has a valid Snappy decompression, set `message-id` to the first 20 bytes of the `SHA256` hash of
-  the concatenation of `MESSAGE_DOMAIN_VALID_SNAPPY` with the Snappy decompressed message data,
-  i.e. `SHA256(MESSAGE_DOMAIN_VALID_SNAPPY + snappy_decompress(message.data))[:20]`.
-* Otherwise, set `message-id` to the first 20 bytes of the `SHA256` hash of
-  the concatenation of `MESSAGE_DOMAIN_INVALID_SNAPPY` with the raw message data,
-  i.e. `SHA256(MESSAGE_DOMAIN_INVALID_SNAPPY + message.data)[:20]`.
+* If `message.data` has a valid snappy decompression, set `message-id` to the first 20 bytes of the `SHA256` hash of the concatenation of the following data: `MESSAGE_DOMAIN_VALID_SNAPPY`, the length of the topic byte string (encoded as little-endian `uint64`), the topic byte string, and the snappy decompressed message data
+```
+SHA256(MESSAGE_DOMAIN_VALID_SNAPPY + uint_to_bytes(uint64(len(message.topic))) + message.topic + snappy_decompress(message.data))[:20]
+```
+
+* Otherwise, set `message-id` to the first 20 bytes of the `SHA256` hash of the concatenation of the following data: `MESSAGE_DOMAIN_INVALID_SNAPPY`, the length of the topic byte string (encoded as little-endian `uint64`), the topic byte string, and the raw message data:
+```
+SHA256(MESSAGE_DOMAIN_INVALID_SNAPPY + uint_to_bytes(uint64(len(message.topic))) + message.topic + message.data)[:20]
+```
 
 *Note*: The above logic handles two exceptional cases:
 (1) multiple Snappy `data` can decompress to the same value,
@@ -163,9 +168,9 @@ and (2) some message `data` can fail to Snappy decompress altogether.
 
 The payload is carried in the `data` field of a gossipsub message, and varies depending on the topic:
 
-| Name                           | Message Type                    |
-|--------------------------------|---------------------------------|
-| `user_ops_with_entry_point`    | `UserOperationsWithEntryPoint`  |
+| Name              | Message Type            |
+|-------------------|-------------------------|
+| `user_operations` | `VerifiedUserOperation` |
 
 Bundlers MUST reject (fail validation) messages containing an incorrect type, or invalid payload.
 
@@ -174,24 +179,30 @@ When processing incoming gossip, Bundlers MAY de-score or disconnect peers who f
 For any optional queueing, Bundlers SHOULD maintain maximum queue sizes to avoid DoS vectors.
 
 
-#### Global topics
+#### Mempool topics
 
-The primary global topics used to propagate user operations to all nodes on the network is `UserOperationsWithEntryPoint`.
+The primary mempool topic used to propagate user operations to peers that share the same mempool is `user_operations`.
 
-##### `user_ops_with_entry_point`
+##### `user_operations`
 
-The `user_ops_with_entry_point` topic is the concatenation of EntryPoint address and a list of UserOperations corresponding to the entry point address. This message is serialized using SSZ.
+The `user_operations` topic is used to gossip user operations on mempools where the user operation is valid per that mempool's rules specified in its metadata.
 
-The following validations MUST pass before forwarding the `user_ops_with_entry_point` on the network:
-- [IGNORE] `verified_at_block_hash` is too far in the past.
-- [REJECT] If any of the sanity checks specified in the [EIP](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-4337.md#client-behavior-upon-receiving-a-useroperation) fails.
-- [REJECT] If the simulated validation of the user operation fails.
+The following validations MUST pass before forwarding the `user_operations` on the network:
+- _[IGNORE]_ `verified_at_block_hash` is too far in the past.
+- _[REJECT]_ If any of the sanity checks specified in the [EIP](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-4337.md#client-behavior-upon-receiving-a-useroperation) fails.
+- _[REJECT]_ If the simulated validation of the user operation fails the validation rules of the mempool it was received on.
+
+Upon receiving a user operation from an `eth_sendUserOperation` RPC call, a bundler MUST:
+
+1. Simulate the user operation.
+2. Check the list of [canonical mempools](#canonical-mempools), in published order. Find the first mempool that the user operation is valid on, if any. If there is a match the bundler MUST ONLY gossip the user operation on that associated mempool topic.
+3. Else, check the list of supported alternative mempools. Gossip the user operation on ALL topics for which the user operation is valid.
 
 ### Encodings
 
 Topics are post-fixed with an encoding. Encodings define how the payload of a gossipsub message is encoded.
 
-ssz_snappy - All objects are SSZ-encoded and then compressed with Snappy block compression. Example: The `user_ops_with_entry_point` topic string of the canonical mempool is /account_abstraction/<mempool_id>/user_ops_with_entry_point/ssz_snappy, the <mempool_id> is `TBD` (the IPFS hash of the mempool yaml/JSON file) and the data field of a gossipsub message is a UserOpsWithEntryPoint that has been SSZ-encoded and then compressed with Snappy.
+ssz_snappy - All objects are SSZ-encoded and then compressed with Snappy block compression. Example: The `user_operations` topic string of the canonical mempool is /account_abstraction/<mempool_id>/user_operations/ssz_snappy, the <mempool_id> is `TBD` (the IPFS hash of the mempool yaml/JSON file) and the data field of a gossipsub message is a UserOpsWithEntryPoint that has been SSZ-encoded and then compressed with Snappy.
 Snappy has two formats: "block" and "frames" (streaming). Gossip messages remain relatively small (100s of bytes to 100s of kilobytes) so basic Snappy block compression is used to avoid the additional overhead associated with Snappy frames.
 
 Implementations MUST use a single encoding for gossip. Changing an encoding will require coordination between participating implementations.
@@ -210,6 +221,11 @@ minimumStake: '0.0'
 ```
 The `mempool-id` of the canonical mempool is `TBD` (IPFS hash of the yaml/JSON file).
 
+#### Canonical Mempools
+
+There will be a published list of canonical mempools maintained by the bundler community. This list represents mempools that support the full [ERC-7562](https://github.com/ethereum/ERCs/pull/105) validation rules as well as certain mempool configuration parameters and a specific entry point contract. All bundlers SHOULD support these mempools. User operations that do not require access to alternative mempools will be supported by at least one of these canonical mempools.
+
+These mempools will be published in precedence order. User operations should be sent ONLY on the first mempool topic which the operation is valid on.
 
 ## The Req/Resp domain
 
@@ -398,12 +414,17 @@ All messages that contain only a single field MUST be encoded directly as the ty
 Request, Response Content:
 ```
 (
-  List[bytes46,MAX_OPS_PER_REQUEST]
+  chain_id: uint64
+  block_hash: Bytes32
+  block_number: uint64
 )
 ```
 The fields are, as seen by the client at the time of sending the message:
 
-- supported_mempools - List of the ascii encoding of the IPFS hash(including the "Qm" prefix) for the supported mempools, the ascii encoding of the ipfs hash has a fixed length of 46 bytes.
+
+- chain_id - Chain ID of the bundler's network. For a community curated list of chain IDs, see https://chainid.network.
+- block_hash - Last block hash seen by the bundler.
+- block_number - Last block number seen by the bundler.
 
 The dialing client MUST send a `Status` request upon connection.
 
@@ -411,9 +432,13 @@ The request/response MUST be encoded as a single SSZ-field.
 
 The response MUST consist of a single `response_chunk`.
 
-Clients SHOULD immediately disconnect from one another following the handshake above under the following conditions:
+Clients MUST immediately disconnect from one another following the handshake above under the following conditions:
 
-1. If the `supported_mempools` and client's own list of supported mempools are disjoint.
+1. If `chain_id` does not match the node's local `chain_id`, since the peer is on another network. This is a configuration error.
+
+Clients MAY disconnect from peers under the following conditions:
+
+1. A peers whose `block_number` is sufficiently behind the current local block number. This is to check the liveliness and reorg status of the peer. Implementors are free to define this limit and it is likely to be network dependent. Some amount of leniency is suggested as nodes discover new blocks at different rates.
 
 #### Goodbye
 
@@ -502,24 +527,38 @@ Request Content:
 
 ```
 (
-  mempool: bytes46
-  offset: uint64
+  // cursor
+  Bytes32
 )
 ```
 
 Response Content: 
 ```
 (
-  more_flag: uint64
-  hashes: List[bytes32, MAX_OPS_PER_REQUEST]
+  hashes: List[Bytes32, MAX_OPS_PER_REQUEST]
+  next_cursor: Bytes32
 )
 ```
 
-The `pooled_user_ops_by_hash` requests UserOp mempool of all connected peers as soon as bundler node starts up. The node requests UserOps from the recipients mempool for a given `mempool` and `offset`. The `mempool` is the ascii encoding of the IPFS hash(including the "Qm" prefix) for the mempool, the ascii encoding of the ipfs hash has a fixed length of 46 bytes. The `offset` is set to `0` for the initial call. The recommended soft limit for PooledUserOpHashes requests is `MAX_OPS_PER_REQUEST` hashes. The recipient may enforce an arbitrary limit on the response (size or serving time), which must not be considered a protocol violation. The `more_flag` is set to 0, if the connected peer's reported hashes is <= to `MAX_OPS_PER_REQUEST`. Otherwise the `more_flag` is set to a value > 0. The value of `more_flag` can be used to determine the number of subsequent req/resp a node has to perform to refetch the missing hashes from the connected peer.
+The `pooled_user_ops_by_hash` request is used to sync the mempool contents of a connected peer. Clients MAY send this request to each peer as they are connected when the bundler node starts up in order to sync their mempool.
 
-The request/response MUST be encoded as a single SSZ-field.
+In the initial request the requestor should send a zero-value cursor, indicating to the recipient to start a new request context.
 
-The response MUST consist of a single `response_chunk`.
+As part of the initial handshake process the recipient of this request MUST know the mempool IDs that the requester and recipient have in common. Upon receiving a request with an empty cursor, the recipient MUST construct a list of user operation hashes from these common mempools. The recipient responds with this list of hashes. If the number of hashes is greater than `MAX_OPS_PER_REQUEST`, the recipient MAY respond with a non-zero `next_cursor` value and save a request context.
+
+`next_cursor` is an opaque value chosen by the recipient to enable pagination in the request context.
+
+If a requestor receives a non-zero `next_cursor` value, they MAY send a request with this cursor value. The recipient interprets this cursor and responds with another, disjoint, list of hashes. This process can continue until the recipient runs out valid hashes and returns a zero `next_cursor` value. The recipient MUST remove any already mined hashes from the request context as to respond with only valid user operations. The recipient should otherwise not modify the context and user operations that were added to the pool after the initial request are not subject to this request context and can be received by starting a new request.
+
+A recipient SHOULD drop a request context after `POOLED_HASHES_CONTEXT_TIMEOUT` seconds from initial request, if a cursor is received for a context that is timed out the recipient MUST return an error.
+
+The requester SHOULD:
+- Complete its requests within `POOLED_HASHES_CONTEXT_TIMEOUT`
+- Disconnect from any peer that responds with a user operation that does not belong to one of their supported mempools.
+
+The request MUST be encoded as a single SSZ-field.
+
+The response MUST be encoded as an SSZ-container and MUST consist of a single `response_chunk`.
 
 #### PooledUserOpsByHash
 
@@ -580,18 +619,15 @@ The ENR MAY contain the following entries:
 
 Specifications of these parameters can be found in the [ENR Specification](http://eips.ethereum.org/EIPS/eip-778).
 
-#### Mempools bitfield
+#### Chain id field
 
-The ENR `mempools` entry signifies the mempools subnet bitfield with the following form
-to more easily discover peers participating in particular mempool id gossip subnets.
+ENRs MUST carry a `chain_id` key containing the ID of the network the bundler is connected to. This is done to ensure connections are made with peers on the intended Ethereum network.
 
-| Key                 | Value                                            |
-|:--------------------|:-------------------------------------------------|
-| `mempool_subnets`   | SSZ `Bitvector[MEMPOOL_ID_SUBNET_COUNT]`        |
+| Key        | Value        |
+|:-----------|:-------------|
+| `chain_id` | SSZ `uint64` |
 
-If a node's `MetaData.mempool_subnets` has any non-zero bit, the ENR MUST include the `mempool_subnets` entry with the same value as `MetaData.mempool_subnets`.
-
-If a node's `MetaData.mempool_subnets` is composed of all zeros, the ENR MAY optionally include the `mempool_subnets` entry or leave it out entirely.
+Clients MUST connect to peers with a `chain_id` that matches its local value.
 
 ## Container Specifications
 
@@ -614,14 +650,13 @@ class UserOp(Container):
     signature: bytes
 ```
 
-#### `UserOperationsWithEntryPoint`
+#### `VerifiedUserOperation`
 
 ```python
-class UserOperationsWithEntryPoint(Container):
-    entry_point_contract: Address
+class VerifiedUserOperation(Container):
+    user_operation: UserOp
+    entry_point: Address
     verified_at_block_hash: uint256
-    chain_id: uint256
-    user_operations: List[UserOp, MAX_OPS_PER_REQUEST]
 ```
 
 ```python
