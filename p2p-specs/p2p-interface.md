@@ -114,7 +114,6 @@ This section outlines type definitions that are used in this spec.
 | Name | Description |
 |---|---|
 | `bytes32`    | Fixed length array of bytes with length 32|
-| `bytes46`    | Fixed lenght array of bytes with length 46|
 
 ## MetaData
 
