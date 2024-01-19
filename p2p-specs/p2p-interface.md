@@ -144,9 +144,6 @@ Topic strings have form: `/account_abstraction/mempool_id/Name/Encoding`.
 This defines both the type of data being sent on the topic and how the data field of the message is encoded.
 
 - `mempool_id` - the IPFS CID string of the file that contains the description of the metadata of the mempool. Please see [mempool-id](#mempool-id) section for further details.
-```
-  mempool_id: List<byte, MAX_IPFS_CID_LENGTH>
-```
 - `Name` - see table below
 - `Encoding` - the encoding strategy describes a specific representation of bytes that will be transmitted over the wire. See the [Encodings](#Encodings) section for further details.
 
@@ -205,14 +202,21 @@ Upon receiving a user operation from an `eth_sendUserOperation` RPC call, a bund
 
 Topics are post-fixed with an encoding. Encodings define how the payload of a gossipsub message is encoded.
 
-ssz_snappy - All objects are SSZ-encoded and then compressed with Snappy block compression. Example: The `user_operations` topic string of the canonical mempool is /account_abstraction/<mempool_id>/user_operations/ssz_snappy, the <mempool_id> is `TBD` (the IPFS hash of the mempool yaml/JSON file) and the data field of a gossipsub message is a UserOpsWithEntryPoint that has been SSZ-encoded and then compressed with Snappy.
+ssz_snappy - All objects are SSZ-encoded and then compressed with Snappy block compression. Example: The `user_operations` topic string of the canonical mempool is /account_abstraction/<mempool_id>/user_operations/ssz_snappy, the <mempool_id> is `TBD` (the IPFS CID string of the mempool yaml/JSON file) and the data field of a gossipsub message is a UserOpsWithEntryPoint that has been SSZ-encoded and then compressed with Snappy.
 Snappy has two formats: "block" and "frames" (streaming). Gossip messages remain relatively small (100s of bytes to 100s of kilobytes) so basic Snappy block compression is used to avoid the additional overhead associated with Snappy frames.
 
 Implementations MUST use a single encoding for gossip. Changing an encoding will require coordination between participating implementations.
 
 ### Mempool ID
 
-The metadata associated to each mempool that a bundler supports is documented and stored in IPFS (a copy of this is also suggested to be submitted to [`eth-infinitism`](https://github.com/eth-infinitism) Github repo). This IPFS hash of the file is called `mempool-id` and this is used as the topic for subscription in the bundlers. The proposed structure of the mempool metadata is as follows
+The metadata associated to each mempool that a bundler supports is documented and stored in IPFS (a copy of this is also suggested to be submitted to [`eth-infinitism`](https://github.com/eth-infinitism) Github repo). 
+
+This [`IPFS CID`](https://docs.ipfs.tech/concepts/content-addressing/) string of the file is called `mempool-id` and this is used as the topic for subscription in the bundlers. 
+```
+  mempool_id: List<byte, MAX_IPFS_CID_LENGTH>
+```
+
+The proposed structure of the mempool metadata is as follows
 
 ```yaml
 chainId: '1'
@@ -222,7 +226,7 @@ description: >-
   Ethereum Mainnnet
 minimumStake: '0.0'
 ```
-The `mempool-id` of the canonical mempool is `TBD` (IPFS hash of the yaml/JSON file).
+The `mempool-id` of the canonical mempool is `TBD` (IPFS CID string of the yaml/JSON file).
 
 #### Canonical Mempools
 
