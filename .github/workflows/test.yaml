@@ -22,5 +22,5 @@ jobs:
       - name: Install staticcheck
         run: go install github.com/lightclient/rpctestgen/cmd/speccheck@latest
       - name: Run staticcheck
-        run: test -d tests && speccheck -v
+        run: find * && test '!' -d tests || speccheck -v
 
