@@ -214,9 +214,13 @@ Implementations MUST use a single encoding for gossip. Changing an encoding will
 The metadata associated to each mempool that a bundler supports is documented and stored in IPFS (a copy of this is also suggested to be submitted to [`eth-infinitism`](https://github.com/eth-infinitism) Github repo). 
 
 This [`IPFS CID`](https://docs.ipfs.tech/concepts/content-addressing/) string of the file is called `mempool-id` and this is used as the topic for subscription in the bundlers. 
+The schema for a `MempoolID` is:
 ```
-  mempool_id: List<byte, MAX_IPFS_CID_LENGTH>
+(
+    List[byte, MAX_IPFS_CID_LENGTH]
+)
 ```
+_Note_: This is a UTF-8 encoding of of the IPFS CID string. Clients MUST interpret this byte sequence as a UTF-8 string and MUST reject any invalid byte sequences.
 
 The proposed structure of the mempool metadata is as follows
 
