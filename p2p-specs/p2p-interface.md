@@ -123,7 +123,7 @@ Bundlers MUST locally store the following `MetaData`:
 ```
 (
   seq_number: uint64
-  supported_mempools: List<mempool_id, MAX_SUPPORTED_MEMPOOLS>
+  supported_mempools: List[MempoolID, MAX_SUPPORTED_MEMPOOLS]
 )
 ```
 
