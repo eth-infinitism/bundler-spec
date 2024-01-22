@@ -217,7 +217,7 @@ The `mempool-id` of the canonical mempool is `TBD` (IPFS hash of the yaml/JSON f
 
 #### Canonical Mempools
 
-There will be a published list of canonical mempools maintained by the bundler community. This list represents mempools that support the full [ERC-7562](https://github.com/ethereum/ERCs/pull/105) validation rules as well as certain mempool configuration parameters and a specific entry point contract. All bundlers SHOULD support these mempools. User operations that do not require access to alternative mempools will be supported by at least one of these canonical mempools.
+There will be a published list of canonical mempools maintained by the bundler community. [This list](https://github.com/eth-infinitism/bundler-spec/blob/main/p2p-specs/canonical-mempools.md) represents mempools that support the full [ERC-7562](https://github.com/ethereum/ERCs/pull/105) validation rules as well as certain mempool configuration parameters and a specific entry point contract. All bundlers SHOULD support these mempools. User operations that do not require access to alternative mempools will be supported by at least one of these canonical mempools.
 
 These mempools will be published in precedence order. User operations should be sent ONLY on the first mempool topic which the operation is valid on.
 
