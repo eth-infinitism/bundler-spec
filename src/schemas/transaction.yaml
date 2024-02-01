@@ -324,7 +324,10 @@ UserOperation:
     - preVerificationGas
     - maxFeePerGas
     - maxPriorityFeePerGas
-    - paymasterAndData
+    - paymaster
+    - paymasterVerificationGasLimit
+    - paymasterPostOpGasLimit
+    - paymasterData
     - signature
   properties:
     sender:
@@ -356,8 +359,20 @@ UserOperation:
       title: max fee per gas
       description: The maximum total fee per gas the sender is willing to pay (includes the network / base fee and miner / priority fee) in wei
       $ref: '#/components/schemas/uint'
-    paymasterAndData:
-      title: paymaster concatenated with paymaster data
+    paymaster:
+      title: paymaster address
+      description: The address of the Paymaster that will be requested to pay the UserOperation gas fees
+      $ref: '#/components/schemas/address'
+    paymasterVerificationGasLimit:
+      title: paymaster verification gas limit
+      description: The maximum amount of gas the Paymaster will be able to spend when deciding whether to accept the gas fee charges or not
+      $ref: '#/components/schemas/uint'
+    paymasterPostOpGasLimit:
+      title: paymaster postOp gas limit
+      description: The maximum amount of gas the Paymaster will be able to spend in the postOp callback
+      $ref: '#/components/schemas/uint'
+    paymasterData:
+      title: paymaster data
       $ref: '#/components/schemas/bytes'
     signature:
       title: signature
