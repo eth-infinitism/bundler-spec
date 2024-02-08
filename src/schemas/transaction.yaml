@@ -317,17 +317,12 @@ UserOperation:
   required:
     - sender
     - nonce
-    - initCode
     - callData
     - callGasLimit
     - verificationGasLimit
     - preVerificationGas
     - maxFeePerGas
     - maxPriorityFeePerGas
-    - paymaster
-    - paymasterVerificationGasLimit
-    - paymasterPostOpGasLimit
-    - paymasterData
     - signature
   properties:
     sender:
@@ -336,8 +331,11 @@ UserOperation:
     nonce:
       title: nonce
       $ref: '#/components/schemas/uint'
-    initCode:
-      title: initCode
+    factory:
+      title: factory
+      $ref: '#/components/schemas/address'
+    factoryData:
+      title: factoryData
       $ref: '#/components/schemas/bytes'
     callData:
       title: callData
