@@ -333,9 +333,11 @@ UserOperation:
       $ref: '#/components/schemas/uint'
     factory:
       title: factory
+      description: Address of the account factory, only for new accounts
       $ref: '#/components/schemas/address'
     factoryData:
       title: factoryData
+      description: Data for the account factory, only if account factory is defined
       $ref: '#/components/schemas/bytes'
     callData:
       title: callData
@@ -363,11 +365,11 @@ UserOperation:
       $ref: '#/components/schemas/address'
     paymasterVerificationGasLimit:
       title: paymaster verification gas limit
-      description: The maximum amount of gas the Paymaster will be able to spend when deciding whether to accept the gas fee charges or not
+      description: The amount of gas to allocate for the paymaster validation code
       $ref: '#/components/schemas/uint'
     paymasterPostOpGasLimit:
       title: paymaster postOp gas limit
-      description: The maximum amount of gas the Paymaster will be able to spend in the postOp callback
+      description: The amount of gas to allocate for the paymaster post-operation code
       $ref: '#/components/schemas/uint'
     paymasterData:
       title: paymaster data
