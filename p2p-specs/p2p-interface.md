@@ -591,7 +591,7 @@ Response Content:
 )
 ```
 
-The `pooled_user_ops_by_hash` requests UserOps from the recipients UserOp mempool for a given EntryPoint contract address. The recommended soft limit for PooledUserOpsByHash requests is MAX_OPS_PER_REQUEST hashes. The recipient may enforce an arbitrary limit on the response (size or serving time), which must not be considered a protocol violation.
+The `pooled_user_ops_by_hash` requests UserOps from the recipients UserOp mempool for a given list of user operations hashes. The recommended soft limit for PooledUserOpsByHash requests is MAX_OPS_PER_REQUEST hashes. The recipient may enforce an arbitrary limit on the response (size or serving time), which must not be considered a protocol violation.
 
 The request MUST be encoded as a single SSZ-field.
 
