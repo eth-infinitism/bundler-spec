@@ -25,7 +25,7 @@ It consists of two main sections:
   - [The gossip domain: gossipsub](#the-gossip-domain-gossipsub)
     - [Topics and messages](#topics-and-messages)
       - [Global topics](#global-topics)
-        - [`user_operations`](#user_operations)
+        - [`user_operation`](#user_operation)
     - [Encodings](#encodings)
     - [Mempool ID](#mempool-id)
   - [The Req/Resp domain](#the-reqresp-domain)
@@ -172,7 +172,7 @@ The payload is carried in the `data` field of a gossipsub message, and varies de
 
 | Name              | Message Type            |
 |-------------------|-------------------------|
-| `user_operations` | `VerifiedUserOperation` |
+| `user_operation` | `VerifiedUserOperation` |
 
 Bundlers MUST reject (fail validation) messages containing an incorrect type, or invalid payload.
 
@@ -183,13 +183,13 @@ For any optional queueing, Bundlers SHOULD maintain maximum queue sizes to avoid
 
 #### Mempool topics
 
-The primary mempool topic used to propagate user operations to peers that share the same mempool is `user_operations`.
+The primary mempool topic used to propagate user operations to peers that share the same mempool is `user_operation`.
 
-##### `user_operations`
+##### `user_operation`
 
-The `user_operations` topic is used to gossip user operations on mempools where the user operation is valid per that mempool's rules specified in its metadata.
+The `user_operation` topic is used to gossip user operations on mempools where the user operation is valid per that mempool's rules specified in its metadata.
 
-The following validations MUST pass before forwarding the `user_operations` on the network:
+The following validations MUST pass before forwarding the `user_operation` on the network:
 - _[IGNORE]_ `verified_at_block_hash` is too far in the past.
 - _[REJECT]_ If any of the sanity checks specified in the [EIP](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-4337.md#client-behavior-upon-receiving-a-useroperation) fails.
 - _[REJECT]_ If the simulated validation of the user operation fails the validation rules of the mempool it was received on.
@@ -204,7 +204,7 @@ Upon receiving a user operation from an `eth_sendUserOperation` RPC call, a bund
 
 Topics are post-fixed with an encoding. Encodings define how the payload of a gossipsub message is encoded.
 
-ssz_snappy - All objects are SSZ-encoded and then compressed with Snappy block compression. Example: The `user_operations` topic string of the canonical mempool is /account_abstraction/<mempool_id>/user_operations/ssz_snappy, the <mempool_id> is `TBD` (the IPFS CID string of the mempool yaml/JSON file) and the data field of a gossipsub message is a UserOpsWithEntryPoint that has been SSZ-encoded and then compressed with Snappy.
+ssz_snappy - All objects are SSZ-encoded and then compressed with Snappy block compression. Example: The `user_operation` topic string of the canonical mempool is /account_abstraction/<mempool_id>/user_operation/ssz_snappy, the <mempool_id> is `TBD` (the IPFS CID string of the mempool yaml/JSON file) and the data field of a gossipsub message is a VerifiedUserOperation that has been SSZ-encoded and then compressed with Snappy.
 Snappy has two formats: "block" and "frames" (streaming). Gossip messages remain relatively small (100s of bytes to 100s of kilobytes) so basic Snappy block compression is used to avoid the additional overhead associated with Snappy frames.
 
 Implementations MUST use a single encoding for gossip. Changing an encoding will require coordination between participating implementations.
