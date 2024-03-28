@@ -1,0 +1,5 @@
+chainId: '137'
+entryPointContract: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789'
+description: >-
+  This is the Polygon mainnet (canonical) mempool which requires a minStake of 1000 MATIC
+minimumStake: '1000'
