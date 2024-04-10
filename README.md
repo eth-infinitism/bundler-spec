@@ -2,8 +2,6 @@
 This repository is based on https://github.com/ethereum/execution-apis/
 ## JSON-RPC
 
-[View the spec][playground]
-
 The Ethereum JSON-RPC is a standard collection of methods that all execution
 clients implement. It is the canonical interface between users and the network.
 This interface allows downstream tooling and infrastructure to treat different
@@ -71,8 +69,6 @@ information.
 
 ## GraphQL
 
-[View the spec][graphql-schema]
-
 [EIP-1767][eip-1767] proposed a GraphQL schema for interacting with Ethereum clients. Since then Besu and Geth have implemented the interface. This repo contains a live specification to integrate changes to the protocol as well as other improvements into the GraphQL shema.
 
 ### Generation
@@ -95,8 +91,6 @@ $ npm run graphql:validate
 
 This repository is licensed under [CC0](LICENSE).
 
-
-[playground]: https://ethereum.github.io/execution-apis/api-documentation/
 [openrpc]: https://open-rpc.org
 [validator]: https://open-rpc.github.io/schema-utils-js/globals.html#validateopenrpcdocument
 [graphql-schema]: http://graphql-schema.ethdevops.io/?url=https://raw.githubusercontent.com/ethereum/execution-apis/main/graphql.json
