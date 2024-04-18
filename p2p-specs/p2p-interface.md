@@ -47,8 +47,8 @@ It consists of two main sections:
     - [ENR structure](#enr-structure)
       - [Chain id field](#chain-id-field)
   - [Container Specifications](#container-specifications)
-      - [`UserOp`](#userop)
-      - [`VerifiedUserOperation`](#verifieduseroperation)
+      - [`PackedUserOp`](#packeduserop)
+      - [`VerifiedPackedUserOperation`](#verifiedpackeduseroperation)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 <!-- /TOC -->
@@ -172,7 +172,7 @@ The payload is carried in the `data` field of a gossipsub message, and varies de
 
 | Name              | Message Type            |
 |-------------------|-------------------------|
-| `user_operations` | `VerifiedUserOperation` |
+| `user_operations` | `VerifiedPackedUserOperation` |
 
 Bundlers MUST reject (fail validation) messages containing an incorrect type, or invalid payload.
 
@@ -197,14 +197,14 @@ The following validations MUST pass before forwarding the `user_operations` on t
 Upon receiving a user operation from an `eth_sendUserOperation` RPC call, a bundler MUST:
 
 1. Simulate the user operation.
-2. Check the list of [canonical mempools](#canonical-mempools), in published order. Find the first mempool that the user operation is valid on, if any. If there is a match the bundler MUST ONLY gossip the user operation on that associated mempool topic.
-3. Else, check the list of supported alternative mempools. Gossip the user operation on ALL topics for which the user operation is valid.
+2. Check the list of [canonical mempools](#canonical-mempools), in published order. Find the first mempool that the user operation is valid on, if any. If there is a match the bundler MUST ONLY gossip the packed user operation on that associated mempool topic.
+3. Else, check the list of supported alternative mempools. Gossip the packed user operation on ALL topics for which the user operation is valid.
 
 ### Encodings
 
 Topics are post-fixed with an encoding. Encodings define how the payload of a gossipsub message is encoded.
 
-ssz_snappy - All objects are SSZ-encoded and then compressed with Snappy block compression. Example: The `user_operations` topic string of the canonical mempool is /account_abstraction/<mempool_id>/user_operations/ssz_snappy, the <mempool_id> is `TBD` (the IPFS CID string of the mempool yaml/JSON file) and the data field of a gossipsub message is a UserOpsWithEntryPoint that has been SSZ-encoded and then compressed with Snappy.
+ssz_snappy - All objects are SSZ-encoded and then compressed with Snappy block compression. Example: The `user_operations` topic string of the canonical mempool is /account_abstraction/<mempool_id>/user_operations/ssz_snappy, the <mempool_id> is `TBD` (the IPFS CID string of the mempool yaml/JSON file) and the data field of a gossipsub message is a VerifiedPackedUserOperation that has been SSZ-encoded and then compressed with Snappy.
 Snappy has two formats: "block" and "frames" (streaming). Gossip messages remain relatively small (100s of bytes to 100s of kilobytes) so basic Snappy block compression is used to avoid the additional overhead associated with Snappy frames.
 
 Implementations MUST use a single encoding for gossip. Changing an encoding will require coordination between participating implementations.
@@ -226,7 +226,7 @@ The proposed structure of the mempool metadata is as follows
 
 ```yaml
 chainId: '1'
-entryPointContract: '0x0576a174d229e3cfa37253523e645a78a0c91b57'
+entryPointContract: '0x0000000071727De22E5E9d8BAf0edAc6f37da032'
 description: >-
   This is the default/canonical mempool, which will be used by most bundlers on
   Ethereum Mainnet
@@ -587,11 +587,11 @@ Request Content:
 Response Content: 
 ```
 (
-  List[VerifiedUserOperation, MAX_OPS_PER_REQUEST]
+  List[VerifiedPackedUserOperation, MAX_OPS_PER_REQUEST]
 )
 ```
 
-The `pooled_user_ops_by_hash` requests UserOps from the recipients UserOp mempool for a given list of user operations hashes. The recommended soft limit for PooledUserOpsByHash requests is MAX_OPS_PER_REQUEST hashes. The recipient may enforce an arbitrary limit on the response (size or serving time), which must not be considered a protocol violation.
+The `pooled_user_ops_by_hash` requests PackedUserOps from the recipients UserOp mempool for a given list of user operations hashes. The recommended soft limit for PooledUserOpsByHash requests is MAX_OPS_PER_REQUEST hashes. The recipient may enforce an arbitrary limit on the response (size or serving time), which must not be considered a protocol violation.
 
 The request MUST be encoded as a single SSZ-field.
 
@@ -645,28 +645,26 @@ Clients MUST connect to peers with a `chain_id` that matches its local value.
 
 The following types are SimpleSerialize (SSZ) containers.
 
-#### `UserOp`
+#### `PackedUserOp`
 
 ```python
-class UserOp(Container):
+class PackedUserOp(Container):
     sender: Address
     nonce: uint256
     init_code: bytes
     call_data: bytes
-    call_gas_limit: uint256
-    verification_gas_limit: uint256
+    account_gas_limits: bytes32
     pre_verification_gas: uint256
-    max_fee_per_gas: uint256
-    max_priority_fee_per_gas: uint256
+    gas_fees: bytes32
     paymaster_and_data: bytes
     signature: bytes
 ```
 
-#### `VerifiedUserOperation`
+#### `VerifiedPackedUserOperation`
 
 ```python
-class VerifiedUserOperation(Container):
-    user_operation: UserOp
+class VerifiedPackedUserOperation(Container):
+    packed_user_op: PackedUserOp
     entry_point: Address
     verified_at_block_hash: uint256
 ```
