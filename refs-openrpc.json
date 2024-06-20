@@ -1,0 +1,1145 @@
+{
+	"openrpc": "1.2.4",
+	"info": {
+		"title": "Ethereum EIP-4337 bundler JSON-RPC Specification",
+		"description": "A specification of the standard interface for EIP-4337 clients.",
+		"license": {
+			"name": "CC0-1.0",
+			"url": "https://creativecommons.org/publicdomain/zero/1.0/legalcode"
+		},
+		"version": "0.0.0"
+	},
+	"methods": [
+		{
+			"name": "eth_chainId",
+			"summary": "Returns the chain ID of the current network.",
+			"params": [],
+			"result": {
+				"name": "Chain ID",
+				"schema": {
+					"$ref": "#/components/schemas/uint"
+				}
+			}
+		},
+		{
+			"name": "eth_supportedEntryPoints",
+			"summary": "Returns an array of the entryPoint addresses supported by the client",
+			"params": [],
+			"result": {
+				"name": "Supported EntryPoints",
+				"schema": {
+					"$ref": "#/components/schemas/addresses"
+				}
+			}
+		},
+		{
+			"name": "eth_coinbase",
+			"summary": "Returns the client coinbase address.",
+			"params": [],
+			"result": {
+				"name": "Coinbase address",
+				"schema": {
+					"$ref": "#/components/schemas/address"
+				}
+			}
+		},
+		{
+			"name": "eth_estimateUserOperationGas",
+			"summary": "Generates and returns an estimate of how much gas is necessary to allow the transaction to complete.",
+			"params": [
+				{
+					"name": "UserOperation",
+					"required": true,
+					"schema": {
+						"$ref": "#/components/schemas/UserOperation"
+					}
+				}
+			],
+			"result": {
+				"name": "Gas info",
+				"schema": {
+					"$ref": "#/components/schemas/GasInfo"
+				}
+			}
+		},
+		{
+			"name": "eth_sendUserOperation",
+			"summary": "Signs and submits a transaction.",
+			"params": [
+				{
+					"name": "Transaction",
+					"required": true,
+					"schema": {
+						"$ref": "#/components/schemas/UserOperation"
+					}
+				}
+			],
+			"result": {
+				"name": "Transaction hash",
+				"schema": {
+					"$ref": "#/components/schemas/hash32"
+				}
+			}
+		},
+		{
+			"name": "eth_getUserOperationByHash",
+			"summary": "Returns the information about a transaction requested by transaction hash.",
+			"params": [
+				{
+					"name": "UserOperation hash",
+					"required": true,
+					"schema": {
+						"$ref": "#/components/schemas/hash32"
+					}
+				}
+			],
+			"result": {
+				"name": "Transaction information",
+				"schema": {
+					"$ref": "#/components/schemas/UserOperationTransactionInfo"
+				}
+			}
+		},
+		{
+			"name": "eth_getUserOperationReceipt",
+			"summary": "Returns the receipt of a transaction by transaction hash.",
+			"params": [
+				{
+					"name": "Transaction hash",
+					"schema": {
+						"$ref": "#/components/schemas/hash32"
+					}
+				}
+			],
+			"result": {
+				"name": "Receipt Information",
+				"schema": {
+					"$ref": "#/components/schemas/UserOperationReceiptInfo"
+				}
+			}
+		},
+		{
+			"name": "debug_bundler_clearState",
+			"summary": "Clears the bundler mempool and reputation data of paymasters/accounts/factories/aggregators.",
+			"params": [],
+			"result": {
+				"name": "ok",
+				"schema": {
+					"$ref": "#/components/schemas/ok"
+				}
+			}
+		},
+		{
+			"name": "debug_bundler_dumpMempool",
+			"summary": "Returns the current mempool",
+			"params": [
+				{
+					"name": "entryPoint",
+					"required": true,
+					"schema": {
+						"$ref": "#/components/schemas/address"
+					}
+				}
+			],
+			"result": {
+				"name": "Mempool",
+				"schema": {
+					"$ref": "#/components/schemas/Mempool"
+				}
+			}
+		},
+		{
+			"name": "debug_bundler_sendBundleNow",
+			"summary": "Forces the bundler to execute the entire current mempool.",
+			"params": [],
+			"result": {
+				"name": "Transaction Hash",
+				"schema": {
+					"$ref": "#/components/schemas/hash32"
+				}
+			}
+		},
+		{
+			"name": "debug_bundler_setBundlingMode",
+			"summary": "Toggles bundling mode between 'auto' and 'manual'",
+			"params": [
+				{
+					"name": "mode",
+					"required": true,
+					"schema": {
+						"$ref": "#/components/schemas/Mode"
+					}
+				}
+			],
+			"result": {
+				"name": "ok",
+				"schema": {
+					"$ref": "#/components/schemas/ok"
+				}
+			}
+		},
+		{
+			"name": "debug_bundler_setReputation",
+			"summary": "Sets reputation of given addresses.",
+			"params": [
+				{
+					"name": "reputations",
+					"required": true,
+					"schema": {
+						"$ref": "#/components/schemas/Reputations"
+					}
+				},
+				{
+					"name": "entryPoint",
+					"required": true,
+					"schema": {
+						"$ref": "#/components/schemas/address"
+					}
+				}
+			],
+			"result": {
+				"name": "ok",
+				"schema": {
+					"$ref": "#/components/schemas/ok"
+				}
+			}
+		},
+		{
+			"name": "debug_bundler_dumpReputation",
+			"summary": "Returns the reputation data of all observed addresses.",
+			"params": [
+				{
+					"name": "entryPoint",
+					"required": true,
+					"schema": {
+						"$ref": "#/components/schemas/address"
+					}
+				}
+			],
+			"result": {
+				"name": "reputations",
+				"schema": {
+					"$ref": "#/components/schemas/Reputations"
+				}
+			}
+		},
+		{
+			"name": "debug_bundler_addUserOps",
+			"summary": "Add a bulk of UserOps into the mempool",
+			"params": [
+				{
+					"name": "userOps",
+					"required": true,
+					"schema": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/UserOperation"
+						}
+					}
+				},
+				{
+					"name": "entryPoint",
+					"required": true,
+					"schema": {
+						"$ref": "#/components/schemas/address"
+					}
+				}
+			],
+			"result": {
+				"name": "ok",
+				"schema": {
+					"$ref": "#/components/schemas/ok"
+				}
+			}
+		}
+	],
+	"components": {
+		"schemas": {
+			"address": {
+				"title": "hex encoded address",
+				"type": "string",
+				"pattern": "^0x[0-9,a-f,A-F]{40}$"
+			},
+			"addresses": {
+				"title": "hex encoded address",
+				"type": "array",
+				"items": {
+					"$ref": "#/components/schemas/address"
+				}
+			},
+			"byte": {
+				"title": "hex encoded byte",
+				"type": "string",
+				"pattern": "^0x([0-9,a-f,A-F]?){1,2}$"
+			},
+			"bytes": {
+				"title": "hex encoded bytes",
+				"type": "string",
+				"pattern": "^0x[0-9a-f]*$"
+			},
+			"bytes8": {
+				"title": "8 hex encoded bytes",
+				"type": "string",
+				"pattern": "^0x[0-9a-f]{16}$"
+			},
+			"bytes32": {
+				"title": "32 hex encoded bytes",
+				"type": "string",
+				"pattern": "^0x([0-9a-f][0-9a-f]){0,32}$"
+			},
+			"bytes256": {
+				"title": "256 hex encoded bytes",
+				"type": "string",
+				"pattern": "^0x[0-9a-f]{512}$"
+			},
+			"bytes65": {
+				"title": "65 hex encoded bytes",
+				"type": "string",
+				"pattern": "^0x[0-9a-f]{512}$"
+			},
+			"uint": {
+				"title": "hex encoded unsigned integer",
+				"oneOf": [
+					{
+						"type": "string",
+						"pattern": "^0x([1-9a-f]+[0-9a-f]*|0)$"
+					},
+					{
+						"type": "number"
+					}
+				]
+			},
+			"uint64": {
+				"title": "hex encoded unsigned integer",
+				"type": "string",
+				"pattern": "^0x([1-9a-f][0-9a-f]{0,15})|0$"
+			},
+			"uint256": {
+				"title": "hex encoded unsigned integer",
+				"type": "string",
+				"pattern": "^0x[0-9a-f]{0,64}$"
+			},
+			"hash32": {
+				"title": "32 byte hex value",
+				"type": "string",
+				"pattern": "^0x([0-9a-f][0-9a-f]){0,32}$"
+			},
+			"ok": {
+				"title": "ok",
+				"type": "string",
+				"pattern": "ok"
+			},
+			"MempoolEntry": {
+				"description": "Mempool entry in the bundler, representing one user operation",
+				"type": "object",
+				"required": [
+					"userOp"
+				],
+				"properties": {
+					"userOp": {
+						"title": "User operation",
+						"$ref": "#/components/schemas/UserOperation"
+					}
+				}
+			},
+			"Mempool": {
+				"description": "Bundler user operations mempool",
+				"type": "array",
+				"items": {
+					"$ref": "#/components/schemas/MempoolEntry"
+				}
+			},
+			"Mode": {
+				"description": "bundling mode on test mode.",
+				"enum": [
+					"manual",
+					"auto"
+				]
+			},
+			"ReputationEntry": {
+				"description": "Reputation information in the bundler, for a given address.",
+				"type": "object",
+				"required": [
+					"address",
+					"opsSeen",
+					"opsIncluded"
+				],
+				"properties": {
+					"address": {
+						"$ref": "#/components/schemas/address"
+					},
+					"opsSeen": {
+						"description": "Total number of user operations associated with the given address, observed by the bundler.",
+						"$ref": "#/components/schemas/uint"
+					},
+					"opsIncluded": {
+						"description": "Number of user operations included in a mined transaction, associated with the given address, observed by the bundler.",
+						"$ref": "#/components/schemas/uint"
+					},
+					"status": {
+						"description": "The serving status for the given address in the bundler.",
+						"enum": [
+							"ok",
+							"throttled",
+							"banned"
+						]
+					}
+				}
+			},
+			"Reputations": {
+				"description": "Reputations information the bundler keeps on all observed addresses.",
+				"type": "array",
+				"items": {
+					"$ref": "#/components/schemas/ReputationEntry"
+				}
+			},
+			"Log": {
+				"title": "log",
+				"type": "object",
+				"required": [
+					"transactionHash"
+				],
+				"properties": {
+					"removed": {
+						"title": "removed",
+						"type": "boolean"
+					},
+					"logIndex": {
+						"title": "log index",
+						"$ref": "#/components/schemas/uint"
+					},
+					"transactionIndex": {
+						"title": "transaction index",
+						"$ref": "#/components/schemas/uint"
+					},
+					"transactionHash": {
+						"title": "transaction hash",
+						"$ref": "#/components/schemas/hash32"
+					},
+					"blockHash": {
+						"title": "block hash",
+						"$ref": "#/components/schemas/hash32"
+					},
+					"blockNumber": {
+						"title": "block number",
+						"$ref": "#/components/schemas/uint"
+					},
+					"address": {
+						"title": "address",
+						"$ref": "#/components/schemas/address"
+					},
+					"data": {
+						"title": "data",
+						"$ref": "#/components/schemas/bytes"
+					},
+					"topics": {
+						"title": "topics",
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/bytes32"
+						}
+					}
+				}
+			},
+			"ReceiptInfo": {
+				"type": "object",
+				"title": "Receipt info",
+				"required": [
+					"blockHash",
+					"blockNumber",
+					"from",
+					"cumulativeGasUsed",
+					"gasUsed",
+					"logs",
+					"logsBloom",
+					"transactionHash",
+					"transactionIndex",
+					"effectiveGasPrice"
+				],
+				"properties": {
+					"transactionHash": {
+						"title": "transaction hash",
+						"$ref": "#/components/schemas/hash32"
+					},
+					"transactionIndex": {
+						"title": "transaction index",
+						"$ref": "#/components/schemas/uint"
+					},
+					"blockHash": {
+						"title": "block hash",
+						"$ref": "#/components/schemas/hash32"
+					},
+					"blockNumber": {
+						"title": "block number",
+						"$ref": "#/components/schemas/uint"
+					},
+					"from": {
+						"title": "from",
+						"$ref": "#/components/schemas/address"
+					},
+					"to": {
+						"title": "to",
+						"description": "Address of the receiver or null in a contract creation transaction.",
+						"$ref": "#/components/schemas/address"
+					},
+					"cumulativeGasUsed": {
+						"title": "cumulative gas used",
+						"description": "The sum of gas used by this transaction and all preceding transactions in the same block.",
+						"$ref": "#/components/schemas/uint"
+					},
+					"gasUsed": {
+						"title": "gas used",
+						"description": "The amount of gas used for this specific transaction alone.",
+						"$ref": "#/components/schemas/uint"
+					},
+					"contractAddress": {
+						"title": "contract address",
+						"description": "The contract address created, if the transaction was a contract creation, otherwise null.",
+						"oneOf": [
+							{
+								"$ref": "#/components/schemas/address"
+							},
+							{
+								"name": null,
+								"type": "null"
+							}
+						]
+					},
+					"logs": {
+						"title": "logs",
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/Log"
+						}
+					},
+					"logsBloom": {
+						"title": "logs bloom",
+						"$ref": "#/components/schemas/bytes256"
+					},
+					"root": {
+						"title": "state root",
+						"description": "The post-transaction state root. Only specified for transactions included before the Byzantium upgrade.",
+						"$ref": "#/components/schemas/bytes32"
+					},
+					"status": {
+						"title": "status",
+						"description": "Either 1 (success) or 0 (failure). Only specified for transactions included after the Byzantium upgrade.",
+						"$ref": "#/components/schemas/uint"
+					},
+					"effectiveGasPrice": {
+						"title": "effective gas price",
+						"description": "The actual value per gas deducted from the senders account. Before EIP-1559, this is equal to the transaction's gas price. After, it is equal to baseFeePerGas + min(maxFeePerGas - baseFeePerGas, maxPriorityFeePerGas).",
+						"$ref": "#/components/schemas/uint"
+					}
+				}
+			},
+			"UserOperationReceiptInfo": {
+				"type": "object",
+				"title": "Receipt info",
+				"required": [
+					"userOpHash",
+					"sender",
+					"nonce",
+					"actualGasCost",
+					"actualGasUsed",
+					"success",
+					"logs",
+					"receipt"
+				],
+				"properties": {
+					"userOpHash": {
+						"title": "user op hash",
+						"$ref": "#/components/schemas/hash32"
+					},
+					"sender": {
+						"title": "sender",
+						"$ref": "#/components/schemas/address"
+					},
+					"nonce": {
+						"title": "nonce",
+						"$ref": "#/components/schemas/uint256"
+					},
+					"paymaster": {
+						"title": "paymaster",
+						"$ref": "#/components/schemas/address"
+					},
+					"actualGasCost": {
+						"title": "actual (gas price * gas used) of the user operation",
+						"$ref": "#/components/schemas/uint"
+					},
+					"actualGasUsed": {
+						"title": "actual gas used of the user operation",
+						"$ref": "#/components/schemas/uint"
+					},
+					"success": {
+						"title": "user operation revert status",
+						"type": "boolean"
+					},
+					"reason": {
+						"title": "If reverted, user operation revert reason",
+						"type": "string"
+					},
+					"logs": {
+						"title": "logs",
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/Log"
+						}
+					},
+					"receipt": {
+						"title": "Transaction Receipt",
+						"description": "The TransactionReceipt object. Note that the returned TransactionReceipt is for the entire bundle, not only for this UserOperation.",
+						"$ref": "#/components/schemas/ReceiptInfo"
+					}
+				}
+			},
+			"AccessListEntry": {
+				"title": "Access list entry",
+				"type": "object",
+				"properties": {
+					"address": {
+						"$ref": "#/components/schemas/address"
+					},
+					"storageKeys": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/hash32"
+						}
+					}
+				}
+			},
+			"AccessList": {
+				"title": "Access list",
+				"type": "array",
+				"items": {
+					"$ref": "#/components/schemas/AccessListEntry"
+				}
+			},
+			"Transaction1559Unsigned": {
+				"type": "object",
+				"title": "EIP-1559 transaction.",
+				"required": [
+					"type",
+					"nonce",
+					"gas",
+					"value",
+					"input",
+					"maxFeePerGas",
+					"maxPriorityFeePerGas",
+					"chainId",
+					"accessList"
+				],
+				"properties": {
+					"type": {
+						"title": "type",
+						"$ref": "#/components/schemas/byte"
+					},
+					"nonce": {
+						"title": "nonce",
+						"$ref": "#/components/schemas/uint"
+					},
+					"to": {
+						"title": "to address",
+						"$ref": "#/components/schemas/address"
+					},
+					"gas": {
+						"title": "gas limit",
+						"$ref": "#/components/schemas/uint"
+					},
+					"value": {
+						"title": "value",
+						"$ref": "#/components/schemas/uint"
+					},
+					"input": {
+						"title": "input data",
+						"$ref": "#/components/schemas/bytes"
+					},
+					"maxPriorityFeePerGas": {
+						"title": "max priority fee per gas",
+						"description": "Maximum fee per gas the sender is willing to pay to miners in wei",
+						"$ref": "#/components/schemas/uint"
+					},
+					"maxFeePerGas": {
+						"title": "max fee per gas",
+						"description": "The maximum total fee per gas the sender is willing to pay (includes the network / base fee and miner / priority fee) in wei",
+						"$ref": "#/components/schemas/uint"
+					},
+					"accessList": {
+						"title": "accessList",
+						"description": "EIP-2930 access list",
+						"$ref": "#/components/schemas/AccessList"
+					},
+					"chainId": {
+						"title": "chainId",
+						"description": "Chain ID that this transaction is valid on.",
+						"$ref": "#/components/schemas/uint"
+					}
+				}
+			},
+			"Transaction2930Unsigned": {
+				"type": "object",
+				"title": "EIP-2930 transaction.",
+				"required": [
+					"type",
+					"nonce",
+					"gas",
+					"value",
+					"input",
+					"gasPrice",
+					"chainId",
+					"accessList"
+				],
+				"properties": {
+					"type": {
+						"title": "type",
+						"$ref": "#/components/schemas/byte"
+					},
+					"nonce": {
+						"title": "nonce",
+						"$ref": "#/components/schemas/uint"
+					},
+					"to": {
+						"title": "to address",
+						"$ref": "#/components/schemas/address"
+					},
+					"gas": {
+						"title": "gas limit",
+						"$ref": "#/components/schemas/uint"
+					},
+					"value": {
+						"title": "value",
+						"$ref": "#/components/schemas/uint"
+					},
+					"input": {
+						"title": "input data",
+						"$ref": "#/components/schemas/bytes"
+					},
+					"gasPrice": {
+						"title": "gas price",
+						"description": "The gas price willing to be paid by the sender in wei",
+						"$ref": "#/components/schemas/uint"
+					},
+					"accessList": {
+						"title": "accessList",
+						"description": "EIP-2930 access list",
+						"$ref": "#/components/schemas/AccessList"
+					},
+					"chainId": {
+						"title": "chainId",
+						"description": "Chain ID that this transaction is valid on.",
+						"$ref": "#/components/schemas/uint"
+					}
+				}
+			},
+			"TransactionLegacyUnsigned": {
+				"type": "object",
+				"title": "Legacy transaction.",
+				"required": [
+					"type",
+					"nonce",
+					"gas",
+					"value",
+					"input",
+					"gasPrice"
+				],
+				"properties": {
+					"type": {
+						"title": "type",
+						"$ref": "#/components/schemas/byte"
+					},
+					"nonce": {
+						"title": "nonce",
+						"$ref": "#/components/schemas/uint"
+					},
+					"to": {
+						"title": "to address",
+						"$ref": "#/components/schemas/address"
+					},
+					"gas": {
+						"title": "gas limit",
+						"$ref": "#/components/schemas/uint"
+					},
+					"value": {
+						"title": "value",
+						"$ref": "#/components/schemas/uint"
+					},
+					"input": {
+						"title": "input data",
+						"$ref": "#/components/schemas/bytes"
+					},
+					"gasPrice": {
+						"title": "gas price",
+						"description": "The gas price willing to be paid by the sender in wei",
+						"$ref": "#/components/schemas/uint"
+					},
+					"chainId": {
+						"title": "chainId",
+						"description": "Chain ID that this transaction is valid on.",
+						"$ref": "#/components/schemas/uint"
+					}
+				}
+			},
+			"TransactionUnsigned": {
+				"oneOf": [
+					{
+						"$ref": "#/components/schemas/Transaction1559Unsigned"
+					},
+					{
+						"$ref": "#/components/schemas/Transaction2930Unsigned"
+					},
+					{
+						"$ref": "#/components/schemas/TransactionLegacyUnsigned"
+					}
+				]
+			},
+			"Transaction1559Signed": {
+				"title": "Signed 1559 Transaction",
+				"type": "object",
+				"allOf": [
+					{
+						"$ref": "#/components/schemas/Transaction1559Unsigned"
+					},
+					{
+						"title": "EIP-1559 transaction signature properties.",
+						"required": [
+							"yParity",
+							"r",
+							"s"
+						],
+						"properties": {
+							"yParity": {
+								"title": "yParity",
+								"description": "The parity (0 for even, 1 for odd) of the y-value of the secp256k1 signature.",
+								"$ref": "#/components/schemas/uint"
+							},
+							"r": {
+								"title": "r",
+								"$ref": "#/components/schemas/uint"
+							},
+							"s": {
+								"title": "s",
+								"$ref": "#/components/schemas/uint"
+							}
+						}
+					}
+				]
+			},
+			"Transaction2930Signed": {
+				"title": "Signed 2930 Transaction",
+				"type": "object",
+				"allOf": [
+					{
+						"$ref": "#/components/schemas/Transaction2930Unsigned"
+					},
+					{
+						"title": "EIP-2930 transaction signature properties.",
+						"required": [
+							"yParity",
+							"r",
+							"s"
+						],
+						"properties": {
+							"yParity": {
+								"title": "yParity",
+								"description": "The parity (0 for even, 1 for odd) of the y-value of the secp256k1 signature.",
+								"$ref": "#/components/schemas/uint"
+							},
+							"r": {
+								"title": "r",
+								"$ref": "#/components/schemas/uint"
+							},
+							"s": {
+								"title": "s",
+								"$ref": "#/components/schemas/uint"
+							}
+						}
+					}
+				]
+			},
+			"TransactionLegacySigned": {
+				"title": "Signed Legacy Transaction",
+				"type": "object",
+				"allOf": [
+					{
+						"$ref": "#/components/schemas/TransactionLegacyUnsigned"
+					},
+					{
+						"title": "Legacy transaction signature properties.",
+						"required": [
+							"v",
+							"r",
+							"s"
+						],
+						"properties": {
+							"v": {
+								"title": "v",
+								"$ref": "#/components/schemas/uint"
+							},
+							"r": {
+								"title": "r",
+								"$ref": "#/components/schemas/uint"
+							},
+							"s": {
+								"title": "s",
+								"$ref": "#/components/schemas/uint"
+							}
+						}
+					}
+				]
+			},
+			"TransactionSigned": {
+				"oneOf": [
+					{
+						"$ref": "#/components/schemas/Transaction1559Signed"
+					},
+					{
+						"$ref": "#/components/schemas/Transaction2930Signed"
+					},
+					{
+						"$ref": "#/components/schemas/TransactionLegacySigned"
+					}
+				]
+			},
+			"TransactionInfo": {
+				"type": "object",
+				"title": "Transaction information",
+				"allOf": [
+					{
+						"title": "Contextual information",
+						"required": [
+							"blockHash",
+							"blockNumber",
+							"from",
+							"hash",
+							"transactionIndex"
+						],
+						"properties": {
+							"blockHash": {
+								"title": "block hash",
+								"$ref": "#/components/schemas/hash32"
+							},
+							"blockNumber": {
+								"title": "block number",
+								"$ref": "#/components/schemas/uint"
+							},
+							"from": {
+								"title": "from address",
+								"$ref": "#/components/schemas/address"
+							},
+							"hash": {
+								"title": "transaction hash",
+								"$ref": "#/components/schemas/hash32"
+							},
+							"transactionIndex": {
+								"title": "transaction index",
+								"$ref": "#/components/schemas/uint"
+							}
+						}
+					},
+					{
+						"$ref": "#/components/schemas/TransactionSigned"
+					}
+				]
+			},
+			"UserOperationTransactionInfo": {
+				"type": "object",
+				"title": "UserOperation transaction information",
+				"required": [
+					"userOperation",
+					"entryPoint",
+					"blockNumber",
+					"blockHash",
+					"transactionHash"
+				],
+				"properties": {
+					"userOperation": {
+						"title": "UserOperation",
+						"$ref": "#/components/schemas/UserOperation"
+					},
+					"entryPoint": {
+						"title": "EntryPoint address",
+						"$ref": "#/components/schemas/address",
+						"blockNumber": {
+							"title": "Block Number",
+							"$ref": "#/components/schemas/uint"
+						},
+						"blockHash": {
+							"title": "Block Hash",
+							"$ref": "#/components/schemas/hash32"
+						},
+						"transactionHash": {
+							"title": "Transaction Hash",
+							"$ref": "#/components/schemas/hash32"
+						}
+					}
+				}
+			},
+			"GenericTransaction": {
+				"type": "object",
+				"title": "Transaction object generic to all types",
+				"properties": {
+					"type": {
+						"title": "type",
+						"$ref": "#/components/schemas/byte"
+					},
+					"nonce": {
+						"title": "nonce",
+						"$ref": "#/components/schemas/uint"
+					},
+					"to": {
+						"title": "to address",
+						"$ref": "#/components/schemas/address"
+					},
+					"from": {
+						"title": "from address",
+						"$ref": "#/components/schemas/address"
+					},
+					"gas": {
+						"title": "gas limit",
+						"$ref": "#/components/schemas/uint"
+					},
+					"value": {
+						"title": "value",
+						"$ref": "#/components/schemas/uint"
+					},
+					"input": {
+						"title": "input data",
+						"$ref": "#/components/schemas/bytes"
+					},
+					"gasPrice": {
+						"title": "gas price",
+						"description": "The gas price willing to be paid by the sender in wei",
+						"$ref": "#/components/schemas/uint"
+					},
+					"maxPriorityFeePerGas": {
+						"title": "max priority fee per gas",
+						"description": "Maximum fee per gas the sender is willing to pay to miners in wei",
+						"$ref": "#/components/schemas/uint"
+					},
+					"maxFeePerGas": {
+						"title": "max fee per gas",
+						"description": "The maximum total fee per gas the sender is willing to pay (includes the network / base fee and miner / priority fee) in wei",
+						"$ref": "#/components/schemas/uint"
+					},
+					"accessList": {
+						"title": "accessList",
+						"description": "EIP-2930 access list",
+						"$ref": "#/components/schemas/AccessList"
+					},
+					"chainId": {
+						"title": "chainId",
+						"description": "Chain ID that this transaction is valid on.",
+						"$ref": "#/components/schemas/uint"
+					}
+				}
+			},
+			"UserOperation": {
+				"type": "object",
+				"title": "ERC-4337 User Operation",
+				"required": [
+					"sender",
+					"nonce",
+					"callData",
+					"callGasLimit",
+					"verificationGasLimit",
+					"preVerificationGas",
+					"maxFeePerGas",
+					"maxPriorityFeePerGas",
+					"signature"
+				],
+				"properties": {
+					"sender": {
+						"title": "sender",
+						"$ref": "#/components/schemas/address"
+					},
+					"nonce": {
+						"title": "nonce",
+						"$ref": "#/components/schemas/uint"
+					},
+					"factory": {
+						"title": "factory",
+						"description": "Address of the account factory, only for new accounts",
+						"$ref": "#/components/schemas/address"
+					},
+					"factoryData": {
+						"title": "factoryData",
+						"description": "Data for the account factory, only if account factory is defined",
+						"$ref": "#/components/schemas/bytes"
+					},
+					"callData": {
+						"title": "callData",
+						"$ref": "#/components/schemas/bytes"
+					},
+					"callGasLimit": {
+						"title": "gas limit",
+						"$ref": "#/components/schemas/uint"
+					},
+					"verificationGasLimit": {
+						"title": "verification gas limit",
+						"$ref": "#/components/schemas/uint"
+					},
+					"preVerificationGas": {
+						"title": "preVerification gas",
+						"$ref": "#/components/schemas/uint"
+					},
+					"maxPriorityFeePerGas": {
+						"title": "max priority fee per gas",
+						"description": "Maximum fee per gas the sender is willing to pay to miners in wei",
+						"$ref": "#/components/schemas/uint"
+					},
+					"maxFeePerGas": {
+						"title": "max fee per gas",
+						"description": "The maximum total fee per gas the sender is willing to pay (includes the network / base fee and miner / priority fee) in wei",
+						"$ref": "#/components/schemas/uint"
+					},
+					"paymaster": {
+						"title": "paymaster address",
+						"description": "The address of the Paymaster that will be requested to pay the UserOperation gas fees",
+						"$ref": "#/components/schemas/address"
+					},
+					"paymasterVerificationGasLimit": {
+						"title": "paymaster verification gas limit",
+						"description": "The amount of gas to allocate for the paymaster validation code",
+						"$ref": "#/components/schemas/uint"
+					},
+					"paymasterPostOpGasLimit": {
+						"title": "paymaster postOp gas limit",
+						"description": "The amount of gas to allocate for the paymaster post-operation code",
+						"$ref": "#/components/schemas/uint"
+					},
+					"paymasterData": {
+						"title": "paymaster data",
+						"$ref": "#/components/schemas/bytes"
+					},
+					"signature": {
+						"title": "signature",
+						"$ref": "#/components/schemas/bytes"
+					}
+				}
+			},
+			"GasInfo": {
+				"type": "object",
+				"title": "UserOperation Gas parameters",
+				"required": [
+					"callGasLimit",
+					"preVerificationGas",
+					"verificationGasLimit"
+				],
+				"properties": {
+					"callGasLimit": {
+						"title": "callGasLimit",
+						"$ref": "#/components/schemas/uint"
+					},
+					"preVerificationGas": {
+						"title": "preVerificationGas",
+						"$ref": "#/components/schemas/uint"
+					},
+					"verificationGasLimit": {
+						"title": "verificationGasLimit",
+						"$ref": "#/components/schemas/uint"
+					}
+				}
+			}
+		}
+	}
+}
