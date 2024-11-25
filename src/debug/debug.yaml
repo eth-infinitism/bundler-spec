@@ -70,6 +70,10 @@
         type: array
         items:
           $ref: '#/components/schemas/UserOperation'
+    - name: entryPoint
+      required: true
+      schema:
+        $ref: '#/components/schemas/address'
   result:
     name: ok
     schema:

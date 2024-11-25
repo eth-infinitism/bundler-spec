@@ -317,14 +317,12 @@ UserOperation:
   required:
     - sender
     - nonce
-    - initCode
     - callData
     - callGasLimit
     - verificationGasLimit
     - preVerificationGas
     - maxFeePerGas
     - maxPriorityFeePerGas
-    - paymasterAndData
     - signature
   properties:
     sender:
@@ -333,8 +331,13 @@ UserOperation:
     nonce:
       title: nonce
       $ref: '#/components/schemas/uint'
-    initCode:
-      title: initCode
+    factory:
+      title: factory
+      description: Address of the account factory, only for new accounts
+      $ref: '#/components/schemas/address'
+    factoryData:
+      title: factoryData
+      description: Data for the account factory, only if account factory is defined
       $ref: '#/components/schemas/bytes'
     callData:
       title: callData
@@ -356,8 +359,20 @@ UserOperation:
       title: max fee per gas
       description: The maximum total fee per gas the sender is willing to pay (includes the network / base fee and miner / priority fee) in wei
       $ref: '#/components/schemas/uint'
-    paymasterAndData:
-      title: paymaster concatenated with paymaster data
+    paymaster:
+      title: paymaster address
+      description: The address of the Paymaster that will be requested to pay the UserOperation gas fees
+      $ref: '#/components/schemas/address'
+    paymasterVerificationGasLimit:
+      title: paymaster verification gas limit
+      description: The amount of gas to allocate for the paymaster validation code
+      $ref: '#/components/schemas/uint'
+    paymasterPostOpGasLimit:
+      title: paymaster postOp gas limit
+      description: The amount of gas to allocate for the paymaster post-operation code
+      $ref: '#/components/schemas/uint'
+    paymasterData:
+      title: paymaster data
       $ref: '#/components/schemas/bytes'
     signature:
       title: signature
