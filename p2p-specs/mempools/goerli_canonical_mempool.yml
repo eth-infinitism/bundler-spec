@@ -1,0 +1,5 @@
+chainId: '5'
+entryPointContract: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789'
+description: >-
+  This is the default/canonical mempool, which will be used by most bundlers on Goerli Testnet
+minimumStake: '0.1'
