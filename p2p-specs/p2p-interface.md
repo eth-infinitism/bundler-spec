@@ -660,6 +660,16 @@ class UserOp(Container):
     max_priority_fee_per_gas: uint256
     paymaster_and_data: bytes
     signature: bytes
+    eip_7702_auth: Optional[Eip7702Auth]
+
+class Eip7702Auth(Container):
+    chain_id: uint256
+    address: address
+    nonce: uint256
+    y_parity: uint256
+    r: uint256
+    s: uint256
+
 ```
 
 #### `VerifiedUserOperation`
